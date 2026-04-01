@@ -1,8 +1,9 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api/client";
 import { riskBandBadgeClass } from "@/lib/risk-band-badge";
-import type { QuoteSummary } from "@/lib/api/types";
+import type { MyQuotesListResponse, QuoteSummary } from "@/lib/api/types";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -21,16 +22,24 @@ function formatDate(iso: string) {
   }).format(new Date(iso));
 }
 
+const PAGE_SIZE = 30;
+
 export function QuotesTable() {
-  const [rows, setRows] = useState<QuoteSummary[] | null>(null);
+  const [page, setPage] = useState(1);
+  const [data, setData] = useState<MyQuotesListResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const data = await api.listMyQuotes();
-        if (!cancelled) setRows(data);
+        const res = await api.listMyQuotes(page, PAGE_SIZE);
+        if (cancelled) return;
+        if (res.total > 0 && res.items.length === 0 && page > 1) {
+          setPage(1);
+          return;
+        }
+        setData(res);
       } catch (e) {
         if (!cancelled)
           setError(e instanceof Error ? e.message : "Failed to load quotes");
@@ -39,7 +48,9 @@ export function QuotesTable() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [page]);
+
+  const rows: QuoteSummary[] | null = data?.items ?? null;
 
   if (error) {
     return (
@@ -74,7 +85,18 @@ export function QuotesTable() {
     );
   }
 
+  const totalPages =
+    data != null && data.limit > 0
+      ? Math.max(1, Math.ceil(data.total / data.limit))
+      : 1;
+  const rangeStart =
+    data != null && data.total > 0 ? (data.page - 1) * data.limit + 1 : 0;
+  const rangeEnd =
+    data != null ? Math.min(data.page * data.limit, data.total) : 0;
+  const atSinglePage = totalPages <= 1;
+
   return (
+    <div className="space-y-4">
     <div className="overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--card-border)] bg-white shadow-[var(--shadow-soft)]">
       <table className="min-w-[900px] w-full text-left text-sm">
         <caption className="sr-only">Your solar quotes</caption>
@@ -150,6 +172,47 @@ export function QuotesTable() {
           ))}
         </tbody>
       </table>
+    </div>
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-[var(--muted)]">
+          {data != null && data.total > 0 ? (
+            <>
+              Showing{" "}
+              <span className="tabular-nums text-[var(--foreground)]">
+                {rangeStart}–{rangeEnd}
+              </span>{" "}
+              of{" "}
+              <span className="tabular-nums text-[var(--foreground)]">
+                {data.total}
+              </span>
+            </>
+          ) : null}
+        </p>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            className="min-w-[5.5rem]"
+            disabled={atSinglePage || page <= 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+          >
+            Previous
+          </Button>
+          <span className="text-sm tabular-nums text-[var(--muted)]">
+            Page {data?.page ?? page} of {totalPages}
+          </span>
+          <Button
+            type="button"
+            variant="secondary"
+            className="min-w-[5.5rem]"
+            disabled={atSinglePage || page >= totalPages}
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+          >
+            Next
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

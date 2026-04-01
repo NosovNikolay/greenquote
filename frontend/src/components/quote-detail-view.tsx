@@ -10,7 +10,7 @@ import { api } from "@/lib/api/client";
 import type { QuoteDetail } from "@/lib/api/types";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 
 function formatCurrency(n: number) {
   return new Intl.NumberFormat("de-DE", {
@@ -58,128 +58,16 @@ function bandClass(band: string) {
   }
 }
 
-function InstallmentAndAmortization({ detail }: { detail: QuoteDetail }) {
-  const [selectedTermYears, setSelectedTermYears] = useState<
-    5 | 10 | 15 | null
-  >(null);
-
-  const activeTermYears = useMemo(() => {
-    if (!detail.installmentOffers?.length) return null;
-    if (
-      selectedTermYears != null &&
-      detail.installmentOffers.some((o) => o.termYears === selectedTermYears)
-    ) {
-      return selectedTermYears;
-    }
-    return detail.installmentOffers[0]!.termYears;
-  }, [detail, selectedTermYears]);
-
-  const selectedOffer = useMemo(() => {
-    if (activeTermYears == null) return undefined;
-    return detail.installmentOffers.find((o) => o.termYears === activeTermYears);
-  }, [detail, activeTermYears]);
-
-  return (
-    <>
-      <Card>
-        <CardTitle className="mb-4">Installment offers</CardTitle>
-        <p className="mb-3 text-sm text-[var(--muted)]">
-          Select a term to view the amortization schedule below.
-        </p>
-        <ul className="grid gap-2 sm:grid-cols-3">
-          {detail.installmentOffers.map((o) => (
-            <li key={o.termYears}>
-              <button
-                type="button"
-                onClick={() => setSelectedTermYears(o.termYears)}
-                className={cn(
-                  "flex w-full flex-col rounded-[var(--radius-md)] border px-4 py-3 text-left text-sm transition-colors",
-                  activeTermYears === o.termYears
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)] ring-1 ring-[var(--accent)]"
-                    : "border-[var(--card-border)] bg-[#fafcfb] hover:bg-[#f0f4f2]",
-                )}
-              >
-                <span className="text-[var(--muted)]">{o.termYears} years</span>
-                <span className="mt-1 text-lg font-semibold tabular-nums">
-                  {formatCurrency(o.monthlyPayment)}
-                  <span className="ml-1 text-xs font-normal text-[var(--muted)]">
-                    /mo
-                  </span>
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-        <p className="mt-6 text-xs text-[var(--muted)]">
-          Figures are indicative and not a binding financing offer.
-        </p>
-      </Card>
-
-      <Card>
-        <CardTitle className="mb-2">Amortization schedule</CardTitle>
-        <p className="mb-4 text-sm text-[var(--muted)]">
-          Month-by-month breakdown of each payment into principal and interest,
-          and the remaining loan balance (fixed-rate loan, annuity method).
-        </p>
-        <AmortizationSchedule offer={selectedOffer} />
-      </Card>
-    </>
-  );
-}
-
-export function QuoteDetailView() {
-  const params = useParams();
-  const id = typeof params.id === "string" ? params.id : "";
-  const [detail, setDetail] = useState<QuoteDetail | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!id) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const data = await api.getQuote(id);
-        if (!cancelled) setDetail(data);
-      } catch (e) {
-        if (!cancelled)
-          setError(e instanceof Error ? e.message : "Could not load quote");
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [id]);
-
-  if (error) {
-    return (
-      <Card>
-        <p className="text-sm text-[var(--danger)]" role="alert">
-          {error}
-        </p>
-        <Link
-          href="/quotes"
-          className={cn(
-            "mt-4 inline-flex items-center justify-center rounded-[var(--radius-md)] border border-[var(--card-border)] bg-white px-4 py-2.5 text-sm font-medium text-[var(--primary)] shadow-sm hover:bg-[var(--accent-soft)]",
-          )}
-        >
-          Back to quotes
-        </Link>
-      </Card>
-    );
-  }
-
-  if (!detail) {
-    return (
-      <div className="rounded-[var(--radius-lg)] border border-[var(--card-border)] bg-white p-8 text-center text-sm text-[var(--muted)]">
-        Loading quote…
-      </div>
-    );
-  }
-
+/** Isolated from term-selection state so changing amortization term does not re-render the hero, project card, or map. */
+const QuoteDetailMain = memo(function QuoteDetailMain({
+  detail,
+}: {
+  detail: QuoteDetail;
+}) {
   const meta = bandMeta(detail.riskBand);
 
   return (
-    <div className="space-y-8">
+    <>
       <div
         className={cn(
           "rounded-[var(--radius-lg)] border-2 p-6 shadow-[var(--shadow-soft)] sm:p-8",
@@ -334,15 +222,142 @@ export function QuoteDetailView() {
         <Card className="p-6 sm:p-8">
           <CardTitle className="mb-6 sm:mb-7">Location</CardTitle>
           <QuoteMinimap
-            key={detail.id}
             address={detail.address}
             lat={detail.addressLat}
             lon={detail.addressLon}
           />
         </Card>
       </div>
+    </>
+  );
+});
 
-      <InstallmentAndAmortization key={detail.id} detail={detail} />
+function InstallmentAndAmortization({ detail }: { detail: QuoteDetail }) {
+  const [selectedTermYears, setSelectedTermYears] = useState<
+    5 | 10 | 15 | null
+  >(null);
+
+  const activeTermYears = useMemo(() => {
+    if (!detail.installmentOffers?.length) return null;
+    if (
+      selectedTermYears != null &&
+      detail.installmentOffers.some((o) => o.termYears === selectedTermYears)
+    ) {
+      return selectedTermYears;
+    }
+    return detail.installmentOffers[0]!.termYears;
+  }, [detail, selectedTermYears]);
+
+  const selectedOffer = useMemo(() => {
+    if (activeTermYears == null) return undefined;
+    return detail.installmentOffers.find((o) => o.termYears === activeTermYears);
+  }, [detail, activeTermYears]);
+
+  return (
+    <>
+      <Card>
+        <CardTitle className="mb-4">Installment offers</CardTitle>
+        <p className="mb-3 text-sm text-[var(--muted)]">
+          Select a term to view the amortization schedule below.
+        </p>
+        <ul className="grid gap-2 sm:grid-cols-3">
+          {detail.installmentOffers.map((o) => (
+            <li key={o.termYears}>
+              <button
+                type="button"
+                onClick={() => setSelectedTermYears(o.termYears)}
+                className={cn(
+                  "flex w-full flex-col rounded-[var(--radius-md)] border px-4 py-3 text-left text-sm transition-colors",
+                  activeTermYears === o.termYears
+                    ? "border-[var(--accent)] bg-[var(--accent-soft)] ring-1 ring-[var(--accent)]"
+                    : "border-[var(--card-border)] bg-[#fafcfb] hover:bg-[#f0f4f2]",
+                )}
+              >
+                <span className="text-[var(--muted)]">{o.termYears} years</span>
+                <span className="mt-1 text-lg font-semibold tabular-nums">
+                  {formatCurrency(o.monthlyPayment)}
+                  <span className="ml-1 text-xs font-normal text-[var(--muted)]">
+                    /mo
+                  </span>
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-6 text-xs text-[var(--muted)]">
+          Figures are indicative and not a binding financing offer.
+        </p>
+      </Card>
+
+      <Card>
+        <CardTitle className="mb-2">Amortization schedule</CardTitle>
+        <p className="mb-4 text-sm text-[var(--muted)]">
+          Month-by-month breakdown of each payment into principal and interest,
+          and the remaining loan balance (fixed-rate loan, annuity method).
+        </p>
+        <AmortizationSchedule
+          key={detail.id}
+          quoteId={detail.id}
+          offer={selectedOffer}
+        />
+      </Card>
+    </>
+  );
+}
+
+export function QuoteDetailView() {
+  const params = useParams();
+  const id = typeof params.id === "string" ? params.id : "";
+  const [detail, setDetail] = useState<QuoteDetail | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await api.getQuote(id);
+        if (!cancelled) setDetail(data);
+      } catch (e) {
+        if (!cancelled)
+          setError(e instanceof Error ? e.message : "Could not load quote");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  if (error) {
+    return (
+      <Card>
+        <p className="text-sm text-[var(--danger)]" role="alert">
+          {error}
+        </p>
+        <Link
+          href="/quotes"
+          className={cn(
+            "mt-4 inline-flex items-center justify-center rounded-[var(--radius-md)] border border-[var(--card-border)] bg-white px-4 py-2.5 text-sm font-medium text-[var(--primary)] shadow-sm hover:bg-[var(--accent-soft)]",
+          )}
+        >
+          Back to quotes
+        </Link>
+      </Card>
+    );
+  }
+
+  if (!detail) {
+    return (
+      <div className="rounded-[var(--radius-lg)] border border-[var(--card-border)] bg-white p-8 text-center text-sm text-[var(--muted)]">
+        Loading quote…
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8">
+      <QuoteDetailMain detail={detail} />
+      <InstallmentAndAmortization detail={detail} />
     </div>
   );
 }

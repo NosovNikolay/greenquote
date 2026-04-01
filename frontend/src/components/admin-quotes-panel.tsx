@@ -7,7 +7,7 @@ import { api } from "@/lib/api/client";
 import { riskBandBadgeClass } from "@/lib/risk-band-badge";
 import type { AdminQuotesListResponse } from "@/lib/api/types";
 import Link from "next/link";
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 function formatCurrency(n: number) {
   return new Intl.NumberFormat("de-DE", {
@@ -26,21 +26,23 @@ function formatDate(iso: string) {
 
 export function AdminQuotesPanel() {
   const [q, setQ] = useState("");
-  const [debounced, setDebounced] = useState("");
-  const [page, setPage] = useState(1);
+  /** Debounced filter + page stay in sync: new search resets to page 1 without a separate effect. */
+  const [filter, setFilter] = useState({ debouncedQ: "", page: 1 });
   const [data, setData] = useState<AdminQuotesListResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const t = setTimeout(() => setDebounced(q.trim()), 300);
+    const t = setTimeout(() => {
+      const next = q.trim();
+      setFilter((f) =>
+        f.debouncedQ === next ? f : { debouncedQ: next, page: 1 },
+      );
+    }, 300);
     return () => clearTimeout(t);
   }, [q]);
 
-  const queryKey = useMemo(() => debounced, [debounced]);
-
-  useLayoutEffect(() => {
-    setPage(1);
-  }, [queryKey]);
+  const queryKey = filter.debouncedQ;
+  const page = filter.page;
 
   useEffect(() => {
     let cancelled = false;
@@ -62,6 +64,7 @@ export function AdminQuotesPanel() {
     data != null && data.limit > 0
       ? Math.max(1, Math.ceil(data.total / data.limit))
       : 1;
+  const atSinglePage = totalPages <= 1;
   const rangeStart =
     data != null && data.total > 0 ? (data.page - 1) * data.limit + 1 : 0;
   const rangeEnd =
@@ -80,20 +83,18 @@ export function AdminQuotesPanel() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1.5">
-        <Label htmlFor="admin-filter">Filter by name or email</Label>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="admin-filter" className="block">
+          Filter by name or email
+        </Label>
         <Input
           id="admin-filter"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search…"
           autoComplete="off"
-          aria-describedby="admin-filter-hint"
-          className="max-w-md"
+          className="w-full max-w-md"
         />
-        <p id="admin-filter-hint" className="text-xs text-[var(--muted)]">
-          Results update as you type (debounced). Up to 30 quotes per page.
-        </p>
       </div>
 
       {data === null ? (
@@ -188,8 +189,10 @@ export function AdminQuotesPanel() {
                 type="button"
                 variant="secondary"
                 className="min-w-[5.5rem]"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={atSinglePage || page <= 1}
+                onClick={() =>
+                  setFilter((f) => ({ ...f, page: Math.max(1, f.page - 1) }))
+                }
               >
                 Previous
               </Button>
@@ -200,8 +203,13 @@ export function AdminQuotesPanel() {
                 type="button"
                 variant="secondary"
                 className="min-w-[5.5rem]"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={atSinglePage || page >= totalPages}
+                onClick={() =>
+                  setFilter((f) => ({
+                    ...f,
+                    page: Math.min(totalPages, f.page + 1),
+                  }))
+                }
               >
                 Next
               </Button>

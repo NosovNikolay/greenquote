@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 
 type Props = {
   address: string;
@@ -23,7 +23,7 @@ function coordsFromProps(
   return null;
 }
 
-export function QuoteMinimap({ address, lat, lon }: Props) {
+function QuoteMinimapInner({ address, lat, lon }: Props) {
   const fromProps = coordsFromProps(lat, lon);
   const [fetched, setFetched] = useState<{ lat: number; lon: number } | null>(
     null,
@@ -102,3 +102,6 @@ export function QuoteMinimap({ address, lat, lon }: Props) {
     </div>
   );
 }
+
+/** Avoid re-running geocode / iframe work when parent re-renders with the same location props. */
+export const QuoteMinimap = memo(QuoteMinimapInner);
