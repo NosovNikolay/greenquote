@@ -6,7 +6,7 @@ import {
   jsonb,
   timestamp,
 } from 'drizzle-orm/pg-core';
-import type { QuoteResultPayload } from '../../common/types/quote-result.types';
+import type { QuoteResultStored } from '../../common/types/quote-result-storage';
 import { users } from './users';
 
 export const quotes = pgTable('quotes', {
@@ -16,9 +16,9 @@ export const quotes = pgTable('quotes', {
     .references(() => users.id, { onDelete: 'cascade' }),
   monthlyConsumptionKwh: integer('monthly_consumption_kwh').notNull(),
   systemSizeKw: doublePrecision('system_size_kw').notNull(),
-  /** Stored in USD with 2 decimal precision (numeric in DB). */
-  downPaymentUsd: doublePrecision('down_payment_usd').notNull(),
-  result: jsonb('result').$type<QuoteResultPayload>().notNull(),
+  /** Same value as `result.inputs.downPaymentEurCents` (integer EUR cents). */
+  downPaymentEurCents: integer('down_payment_eur_cents').notNull(),
+  result: jsonb('result').$type<QuoteResultStored>().notNull(),
   createdAt: timestamp('created_at', { withTimezone: true })
     .defaultNow()
     .notNull(),

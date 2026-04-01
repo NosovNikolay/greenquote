@@ -93,9 +93,9 @@
           "primaryKey": false,
           "notNull": true
         },
-        "down_payment_usd": {
-          "name": "down_payment_usd",
-          "type": "double precision",
+        "down_payment_eur_cents": {
+          "name": "down_payment_eur_cents",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true
         },

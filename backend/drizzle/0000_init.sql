@@ -13,7 +13,7 @@ CREATE TABLE "quotes" (
 	"user_id" uuid NOT NULL,
 	"monthly_consumption_kwh" integer NOT NULL,
 	"system_size_kw" double precision NOT NULL,
-	"down_payment_usd" double precision NOT NULL,
+	"down_payment_eur_cents" integer NOT NULL,
 	"result" jsonb NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
