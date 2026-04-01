@@ -111,7 +111,16 @@ export function QuoteForm() {
       router.refresh();
     } catch (e) {
       setProgressLabel(null);
-      setSubmitError(e instanceof Error ? e.message : "Request failed");
+      const msg = e instanceof Error ? e.message : "Request failed";
+      if (/down payment/i.test(msg)) {
+        form.setError("downPayment", {
+          type: "server",
+          message:
+            "Must be less than the estimated system price for this system size.",
+        });
+        return;
+      }
+      setSubmitError(msg);
     }
   }
 

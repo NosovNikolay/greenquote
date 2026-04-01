@@ -19,7 +19,7 @@ export function AmortizationSchedule({
 }: {
   offer: InstallmentOffer | undefined;
 }) {
-  if (!offer || offer.principalUsd <= 0) {
+  if (!offer || offer.principalEur <= 0) {
     return (
       <p className="text-sm text-[var(--muted)]">
         No financed amount — amortization does not apply.
@@ -28,10 +28,10 @@ export function AmortizationSchedule({
   }
 
   const rows = buildAmortizationSchedule({
-    principalUsd: offer.principalUsd,
+    principalEur: offer.principalEur,
     annualAprPercent: offer.apr,
     termYears: offer.termYears,
-    monthlyPaymentUsd: offer.monthlyPayment,
+    monthlyPaymentEur: offer.monthlyPayment,
   });
 
   const interestTotal = totalInterestPaid(rows);
@@ -39,7 +39,7 @@ export function AmortizationSchedule({
   return (
     <div className="space-y-3">
       <p className="text-xs text-[var(--muted)]">
-        Financed {formatCurrency(offer.principalUsd)} at {offer.apr}% APR over{" "}
+        Financed {formatCurrency(offer.principalEur)} at {offer.apr}% APR over{" "}
         {offer.termYears} years ({rows.length} payments).
       </p>
       <div className="max-h-[min(24rem,50vh)] overflow-auto rounded-[var(--radius-md)] border border-[var(--card-border)]">

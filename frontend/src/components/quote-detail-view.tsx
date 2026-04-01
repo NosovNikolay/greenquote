@@ -214,41 +214,62 @@ export function QuoteDetailView() {
             className="min-h-11"
             onClick={() => downloadQuotePdf(detail)}
           >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="shrink-0 text-[var(--accent)]"
+              aria-hidden
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" x2="12" y1="15" y2="3" />
+            </svg>
             Download PDF
           </Button>
-          <Link
-            href="/quotes"
-            className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-md)] border border-[var(--card-border)] bg-white px-4 text-sm font-medium text-[var(--primary)] shadow-sm hover:bg-[var(--accent-soft)]"
-          >
-            All quotes
-          </Link>
         </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardTitle className="mb-4">Project &amp; contact</CardTitle>
-          <dl className="grid gap-4 text-sm">
-            <div>
-              <dt className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
-                Quote reference
-              </dt>
-              <dd className="mt-1 font-mono text-sm">{detail.id}</dd>
+        <Card className="p-6 sm:p-8">
+          <CardTitle className="mb-6 sm:mb-7">Project &amp; contact</CardTitle>
+          <dl className="space-y-6 sm:space-y-7 text-sm">
+            <div className="grid gap-6 sm:grid-cols-2 sm:gap-x-10 sm:gap-y-0">
+              <div className="min-w-0">
+                <dt className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
+                  Quote reference
+                </dt>
+                <dd
+                  className="mt-2 font-mono text-xs leading-snug tracking-tight text-[var(--foreground)] break-all sm:text-sm"
+                  title={detail.id}
+                >
+                  {detail.id}
+                </dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
+                  Created
+                </dt>
+                <dd className="mt-2 leading-relaxed">
+                  {formatDate(detail.createdAt)}
+                </dd>
+              </div>
             </div>
-            <div>
-              <dt className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
-                Created
-              </dt>
-              <dd className="mt-1">{formatDate(detail.createdAt)}</dd>
-            </div>
-            <div className="sm:col-span-2">
+
+            <div className="min-w-0 border-t border-[var(--card-border)] pt-6 sm:pt-7">
               <dt className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
                 Installation address
               </dt>
               {detail.streetLine &&
               detail.city &&
               detail.country ? (
-                <dd className="mt-2 space-y-1.5">
+                <dd className="mt-3 space-y-2">
                   <p>
                     <span className="text-[var(--muted)]">Street: </span>
                     <span className="font-medium">{detail.streetLine}</span>
@@ -263,39 +284,46 @@ export function QuoteDetailView() {
                   </p>
                 </dd>
               ) : (
-                <dd className="mt-1 font-medium">{detail.address}</dd>
+                <dd className="mt-3 font-medium leading-relaxed">
+                  {detail.address}
+                </dd>
               )}
             </div>
-            <div>
+
+            <div className="min-w-0 border-t border-[var(--card-border)] pt-6 sm:pt-7">
               <dt className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
                 Contact
               </dt>
-              <dd className="mt-1">
+              <dd className="mt-3 leading-relaxed">
                 {detail.fullName} · {detail.email}
               </dd>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <dt className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
+
+            <div className="grid grid-cols-1 gap-6 border-t border-[var(--card-border)] pt-6 sm:grid-cols-2 sm:gap-x-10 sm:pt-7">
+              <div className="min-w-0">
+                <dt className="text-[11px] font-medium uppercase leading-tight tracking-wide text-[var(--muted)] sm:text-xs">
                   Monthly consumption
                 </dt>
-                <dd className="mt-1 tabular-nums">
+                <dd className="mt-2 text-base font-medium tabular-nums text-[var(--foreground)]">
                   {detail.monthlyConsumptionKwh} kWh
                 </dd>
               </div>
-              <div>
+              <div className="min-w-0">
                 <dt className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
                   System size
                 </dt>
-                <dd className="mt-1 tabular-nums">{detail.systemSizeKw} kW</dd>
+                <dd className="mt-2 text-base font-medium tabular-nums text-[var(--foreground)]">
+                  {detail.systemSizeKw} kW
+                </dd>
               </div>
             </div>
+
             {detail.downPayment != null && detail.downPayment > 0 ? (
-              <div>
+              <div className="border-t border-[var(--card-border)] pt-6 sm:pt-7">
                 <dt className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
                   Down payment
                 </dt>
-                <dd className="mt-1 tabular-nums">
+                <dd className="mt-2 text-base font-medium tabular-nums">
                   {formatCurrency(detail.downPayment)}
                 </dd>
               </div>
@@ -303,8 +331,8 @@ export function QuoteDetailView() {
           </dl>
         </Card>
 
-        <Card>
-          <CardTitle className="mb-4">Location</CardTitle>
+        <Card className="p-6 sm:p-8">
+          <CardTitle className="mb-6 sm:mb-7">Location</CardTitle>
           <QuoteMinimap
             key={detail.id}
             address={detail.address}

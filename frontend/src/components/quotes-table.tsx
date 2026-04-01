@@ -1,6 +1,7 @@
 "use client";
 
 import { api } from "@/lib/api/client";
+import { riskBandBadgeClass } from "@/lib/risk-band-badge";
 import type { QuoteSummary } from "@/lib/api/types";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -18,19 +19,6 @@ function formatDate(iso: string) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(iso));
-}
-
-function riskBandStyles(band: string) {
-  switch (band) {
-    case "A":
-      return "bg-emerald-100 text-emerald-900 ring-1 ring-emerald-300/80";
-    case "B":
-      return "bg-amber-100 text-amber-950 ring-1 ring-amber-300/80";
-    case "C":
-      return "bg-orange-100 text-orange-950 ring-1 ring-orange-300/80";
-    default:
-      return "bg-slate-100 text-slate-800 ring-1 ring-slate-300/80";
-  }
 }
 
 export function QuotesTable() {
@@ -142,7 +130,7 @@ export function QuotesTable() {
               </td>
               <td className="px-4 py-3">
                 <span
-                  className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${riskBandStyles(q.riskBand)}`}
+                  className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${riskBandBadgeClass(q.riskBand)}`}
                 >
                   {q.riskBand}
                 </span>
