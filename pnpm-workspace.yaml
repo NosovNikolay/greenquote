@@ -1,0 +1,5 @@
+# https://pnpm.io/workspaces
+packages:
+  - 'backend'
+  - 'frontend'
+  - 'packages/*'
