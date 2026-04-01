@@ -1,7 +1,8 @@
 import { config } from 'dotenv';
 import { resolve } from 'node:path';
 
-const root = resolve(__dirname, '..');
+/** Backend project root (contains `package.json`, `.env`). */
+const root = resolve(__dirname, '../..');
 config({ path: resolve(root, '.env.local') });
 config({ path: resolve(root, '.env') });
 config({ path: resolve(root, '.env.test') });

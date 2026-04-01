@@ -5,8 +5,8 @@ import { resolve } from 'node:path';
 /**
  * Runs once before e2e workers. Ensures schema is applied (requires Postgres).
  */
-export default async function globalSetup(): Promise<void> {
-  const root = resolve(__dirname, '..');
+export default function globalSetup(): void {
+  const root = resolve(__dirname, '../..');
   config({ path: resolve(root, '.env.local') });
   config({ path: resolve(root, '.env') });
   config({ path: resolve(root, '.env.test') });

@@ -1,9 +1,68 @@
 import 'dotenv/config';
 import * as bcrypt from 'bcrypt';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
+import { serializeQuoteResultPayload } from '../common/types/quote-result-storage';
+import { PricingService } from '../modules/quotes/pricing.service';
+import { quotes } from './schema/quotes';
 import { users } from './schema/users';
+
+const pricing = new PricingService();
+
+async function seedDemoQuotesForDefaultUser(
+  db: ReturnType<typeof drizzle>,
+  userId: string,
+  fullName: string,
+  email: string,
+): Promise<void> {
+  const countRows = await db
+    .select({ n: sql<number>`cast(count(*) as int)` })
+    .from(quotes)
+    .where(eq(quotes.userId, userId));
+  const existing = Number(countRows[0]?.n ?? 0);
+  const target = 30;
+  if (existing >= target) {
+    console.log(
+      `Seed skip: demo user already has ${existing} quotes (target ${target})`,
+    );
+    return;
+  }
+  const toAdd = target - existing;
+  const now = Date.now();
+  for (let i = 0; i < toAdd; i++) {
+    const systemSizeKw = 4 + (i % 12) * 0.5;
+    const monthlyConsumptionKwh = 280 + (i % 15) * 25;
+    const rawDown = 500 + i * 40;
+    const systemPriceEur = systemSizeKw * 1200;
+    const downPaymentEur = Math.min(rawDown, Math.max(0, systemPriceEur - 200));
+
+    const payload = pricing.buildQuoteResult({
+      monthlyConsumptionKwh,
+      systemSizeKw,
+      downPaymentEur,
+      installationAddress: `${i + 1} Demo Str., Berlin, DE`,
+    });
+    const stored = serializeQuoteResultPayload({
+      ...payload,
+      inputs: {
+        ...payload.inputs,
+        fullName,
+        email,
+      },
+    });
+
+    await db.insert(quotes).values({
+      userId,
+      monthlyConsumptionKwh,
+      systemSizeKw,
+      downPaymentEurCents: stored.inputs.downPaymentEurCents,
+      result: stored,
+      createdAt: new Date(now - i * 3_600_000),
+    });
+  }
+  console.log(`Seeded ${toAdd} quote(s) for default demo user ${email}`);
+}
 
 async function upsertUser(
   db: ReturnType<typeof drizzle>,
@@ -42,10 +101,8 @@ async function main(): Promise<void> {
   const pool = new Pool({ connectionString: url });
   const db = drizzle(pool);
 
-  const adminEmail = (
-    process.env.ADMIN_EMAIL ?? 'admin@greenquote.local'
-  ).toLowerCase();
-  const adminPassword = process.env.ADMIN_PASSWORD ?? 'Admin123456!';
+  const adminEmail = 'admin@greenquote.local';
+  const adminPassword = 'Admin123456!';
 
   await upsertUser(db, {
     email: adminEmail,
@@ -54,16 +111,9 @@ async function main(): Promise<void> {
     role: 'admin',
   });
 
-  const demoAdminEmail = (
-    process.env.DEMO_ADMIN_EMAIL ?? 'admin@test.com'
-  ).toLowerCase();
-  const demoUserEmail = (
-    process.env.DEMO_USER_EMAIL ?? 'user@test.com'
-  ).toLowerCase();
-  const demoPassword =
-    process.env.DEMO_ADMIN_PASSWORD ??
-    process.env.DEMO_USER_PASSWORD ??
-    'password123';
+  const demoAdminEmail = 'admin@test.com';
+  const demoUserEmail = 'user@test.com';
+  const demoPassword = 'password123';
 
   await upsertUser(db, {
     email: demoAdminEmail,
@@ -78,6 +128,25 @@ async function main(): Promise<void> {
     fullName: 'Demo User',
     role: 'user',
   });
+
+  const demoUserRows = await db
+    .select({
+      id: users.id,
+      fullName: users.fullName,
+      email: users.email,
+    })
+    .from(users)
+    .where(eq(users.email, demoUserEmail.toLowerCase()))
+    .limit(1);
+  const demoUser = demoUserRows[0];
+  if (demoUser) {
+    await seedDemoQuotesForDefaultUser(
+      db,
+      demoUser.id,
+      demoUser.fullName,
+      demoUser.email,
+    );
+  }
 
   await pool.end();
 }

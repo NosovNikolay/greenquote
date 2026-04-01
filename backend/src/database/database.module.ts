@@ -1,9 +1,13 @@
 import { Global, Module } from '@nestjs/common';
-import { drizzleProvider } from './drizzle.provider';
+import {
+  drizzleProvider,
+  PgPoolLifecycle,
+  poolProvider,
+} from './drizzle.provider';
 
 @Global()
 @Module({
-  providers: [drizzleProvider],
+  providers: [poolProvider, drizzleProvider, PgPoolLifecycle],
   exports: [drizzleProvider],
 })
 export class DatabaseModule {}

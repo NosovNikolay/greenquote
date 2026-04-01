@@ -1,10 +1,11 @@
-import { PricingService } from '../../modules/quotes/pricing.service';
+import { PricingService } from '../../../../src/modules/quotes/pricing.service';
 import {
   deserializeQuoteResultStored,
   serializeQuoteResultPayload,
-} from './quote-result-storage';
+} from '../../../../src/common/types/quote-result-storage';
+import { eurToCents } from '../../../../src/common/utils/money';
 
-describe('quote-result-storage', () => {
+describe('quote-result-storage (EUR decimals ↔ integer cents)', () => {
   const pricing = new PricingService();
 
   it('round-trips serialize → deserialize for a full payload', () => {
@@ -58,5 +59,39 @@ describe('quote-result-storage', () => {
     });
     const stored = serializeQuoteResultPayload(payload);
     expect(stored.inputs).not.toHaveProperty('installationAddress');
+  });
+
+  it('stores all monetary fields as integer cents (DB-safe)', () => {
+    const payload = pricing.buildQuoteResult({
+      monthlyConsumptionKwh: 400,
+      systemSizeKw: 6,
+      downPaymentEur: 1234.56,
+    });
+    const stored = serializeQuoteResultPayload(payload);
+    expect(Number.isInteger(stored.inputs.downPaymentEurCents)).toBe(true);
+    expect(Number.isInteger(stored.derived.systemPriceEurCents)).toBe(true);
+    expect(Number.isInteger(stored.derived.principalEurCents)).toBe(true);
+    for (const o of stored.offers) {
+      expect(Number.isInteger(o.principalUsedCents)).toBe(true);
+      expect(Number.isInteger(o.monthlyPaymentCents)).toBe(true);
+    }
+  });
+
+  it('stored cents match eurToCents of rounded EUR domain values', () => {
+    const payload = pricing.buildQuoteResult({
+      monthlyConsumptionKwh: 350,
+      systemSizeKw: 5,
+      downPaymentEur: 500,
+    });
+    const stored = serializeQuoteResultPayload(payload);
+    expect(stored.derived.systemPriceEurCents).toBe(
+      eurToCents(payload.derived.systemPriceEur),
+    );
+    expect(stored.derived.principalEurCents).toBe(
+      eurToCents(payload.derived.principalEur),
+    );
+    expect(stored.inputs.downPaymentEurCents).toBe(
+      eurToCents(payload.inputs.downPaymentEur),
+    );
   });
 });

@@ -110,7 +110,11 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         break;
       }
       seen.add(current);
-      if (typeof current === 'object' && current !== null && 'code' in current) {
+      if (
+        typeof current === 'object' &&
+        current !== null &&
+        'code' in current
+      ) {
         const code = (current as { code: unknown }).code;
         if (typeof code === 'string' && /^[0-9]{5}$/.test(code)) {
           return code;

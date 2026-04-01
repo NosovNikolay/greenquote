@@ -33,6 +33,8 @@ describe('Quote lifecycle (e2e)', () => {
     expect(loggedIn.accessToken).toEqual(expect.any(String));
 
     const created = await api.createQuote(loggedIn, {
+      fullName: 'E2E User',
+      email,
       monthlyConsumptionKwh: 450,
       systemSizeKw: 5.4,
       downPayment: 1500,
@@ -40,7 +42,7 @@ describe('Quote lifecycle (e2e)', () => {
     });
 
     expect(created.id).toEqual(expect.any(String));
-    expect(created.derived.systemPriceUsd).toBeCloseTo(5.4 * 1200, 2);
+    expect(created.derived.systemPriceEur).toBeCloseTo(5.4 * 1200, 2);
     expect(created.inputs.monthlyConsumptionKwh).toBe(450);
 
     const list = await api.listMyQuotes(loggedIn);
@@ -53,5 +55,11 @@ describe('Quote lifecycle (e2e)', () => {
     expect(details.id).toBe(created.id);
     expect(details.derived.riskBand).toBe(created.derived.riskBand);
     expect(details.contact?.email).toBe(email.toLowerCase());
+
+    const amort = await api.getQuoteAmortization(loggedIn, created.id, 5);
+    expect(amort.termYears).toBe(5);
+    expect(amort.rows).toHaveLength(60);
+    expect(amort.rows[amort.rows.length - 1]?.balanceRemaining).toBe(0);
+    expect(amort.totalInterestEur).toBeGreaterThan(0);
   });
 });

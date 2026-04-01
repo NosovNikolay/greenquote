@@ -22,7 +22,9 @@ const COUNTRY_LAST_SEGMENT = new Set([
 ]);
 
 /** Best-effort city label from a free-form installation address. */
-export function extractCityFromAddress(address: string | undefined): string | undefined {
+export function extractCityFromAddress(
+  address: string | undefined,
+): string | undefined {
   if (address == null || !address.trim()) return undefined;
   const parts = address
     .split(',')
