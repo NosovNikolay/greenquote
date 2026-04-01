@@ -65,7 +65,21 @@ export class QuotesRepository {
       .orderBy(desc(quotes.createdAt));
   }
 
-  async findByUserIdWithUser(userId: string): Promise<
+  async countByUserId(userId: string): Promise<number> {
+    const rows = await this.db
+      .select({
+        n: sql<number>`cast(count(*) as int)`,
+      })
+      .from(quotes)
+      .where(eq(quotes.userId, userId));
+    return Number(rows[0]?.n ?? 0);
+  }
+
+  async findByUserIdWithUserPaginated(
+    userId: string,
+    limit: number,
+    offset: number,
+  ): Promise<
     Array<{
       quote: QuoteRow;
       userEmail: string;
@@ -81,10 +95,37 @@ export class QuotesRepository {
       .from(quotes)
       .innerJoin(users, eq(quotes.userId, users.id))
       .where(eq(quotes.userId, userId))
-      .orderBy(desc(quotes.createdAt));
+      .orderBy(desc(quotes.createdAt))
+      .limit(limit)
+      .offset(offset);
   }
 
-  async findAllForAdmin(search?: string): Promise<
+  private adminSearchWhere(trimmed: string | undefined) {
+    return trimmed
+      ? or(
+          ilike(users.email, `%${trimmed}%`),
+          ilike(users.fullName, `%${trimmed}%`),
+        )
+      : sql`true`;
+  }
+
+  async countAllForAdmin(search?: string): Promise<number> {
+    const trimmed = search?.trim();
+    const rows = await this.db
+      .select({
+        n: sql<number>`cast(count(*) as int)`,
+      })
+      .from(quotes)
+      .innerJoin(users, eq(quotes.userId, users.id))
+      .where(this.adminSearchWhere(trimmed));
+    return Number(rows[0]?.n ?? 0);
+  }
+
+  async findAllForAdmin(
+    search: string | undefined,
+    limit: number,
+    offset: number,
+  ): Promise<
     Array<{
       quote: QuoteRow;
       userEmail: string;
@@ -101,14 +142,9 @@ export class QuotesRepository {
       })
       .from(quotes)
       .innerJoin(users, eq(quotes.userId, users.id))
-      .where(
-        trimmed
-          ? or(
-              ilike(users.email, `%${trimmed}%`),
-              ilike(users.fullName, `%${trimmed}%`),
-            )
-          : sql`true`,
-      )
-      .orderBy(desc(quotes.createdAt));
+      .where(this.adminSearchWhere(trimmed))
+      .orderBy(desc(quotes.createdAt))
+      .limit(limit)
+      .offset(offset);
   }
 }

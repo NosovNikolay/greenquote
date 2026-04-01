@@ -19,11 +19,21 @@ export class AdminQuotesController {
   constructor(private readonly quotesService: QuotesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List all quotes (admin)' })
-  listAll(@CurrentUser() user: RequestUser, @Query('q') q?: string) {
+  @ApiOperation({ summary: 'List quotes (admin), paginated' })
+  listAll(
+    @CurrentUser() user: RequestUser,
+    @Query('q') q?: string,
+    @Query('page') pageRaw?: string,
+    @Query('limit') limitRaw?: string,
+  ) {
     if (user.role !== 'admin') {
       throw new ForbiddenException();
     }
-    return this.quotesService.listAll(q);
+    const page = Math.max(1, parseInt(pageRaw ?? '1', 10) || 1);
+    const limit = Math.min(
+      30,
+      Math.max(1, parseInt(limitRaw ?? '30', 10) || 30),
+    );
+    return this.quotesService.listAll(q, page, limit);
   }
 }

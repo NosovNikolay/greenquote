@@ -1,4 +1,14 @@
 import { Injectable } from '@nestjs/common';
+import {
+  deserializeQuoteResultStored,
+  serializeQuoteResultPayload,
+} from '../../common/types/quote-result-storage';
+import {
+  buildAmortizationSchedule,
+  totalInterestPaid,
+  type AmortizationRow,
+} from '../../common/utils/amortization';
+import { centsToEur } from '../../common/utils/money';
 import { extractCityFromAddress } from '../../common/utils/address';
 import { AppException } from '../../common/exceptions/app.exception';
 import type { QuoteRow } from '../../database/schema';
@@ -7,7 +17,7 @@ import { CreateQuoteDto } from './dto/create-quote.dto';
 import { PricingService } from './pricing.service';
 import { QuotesRepository } from './quotes.repository';
 
-const PRICE_PER_KW_USD = 1200;
+const PRICE_PER_KW_EUR = 1200;
 
 export interface QuoteResponseDto {
   id: string;
@@ -19,13 +29,15 @@ export interface QuoteResponseDto {
   inputs: {
     monthlyConsumptionKwh: number;
     systemSizeKw: number;
-    downPaymentUsd: number;
+    downPaymentEur: number;
     installationAddress?: string;
+    fullName?: string;
+    email?: string;
   };
   derived: {
-    currency: 'USD';
-    systemPriceUsd: number;
-    principalUsd: number;
+    currency: 'EUR';
+    systemPriceEur: number;
+    principalEur: number;
     riskBand: 'A' | 'B' | 'C';
     aprPercent: number;
   };
@@ -53,6 +65,17 @@ export interface AdminQuoteRowDto extends QuoteSummaryDto {
   userName: string;
 }
 
+export interface QuoteAmortizationScheduleDto {
+  termYears: number;
+  apr: number;
+  principalEur: number;
+  monthlyPayment: number;
+  rows: AmortizationRow[];
+  totalInterestEur: number;
+}
+
+const ALLOWED_AMORTIZATION_TERMS = new Set([5, 10, 15]);
+
 @Injectable()
 export class QuotesService {
   constructor(
@@ -61,32 +84,90 @@ export class QuotesService {
   ) {}
 
   async create(userId: string, dto: CreateQuoteDto): Promise<QuoteResponseDto> {
-    const systemPriceUsd = dto.systemSizeKw * PRICE_PER_KW_USD;
-    if (dto.downPayment >= systemPriceUsd) {
+    const systemPriceEur = dto.systemSizeKw * PRICE_PER_KW_EUR;
+    if (dto.downPayment >= systemPriceEur) {
       throw AppException.badRequest(
         'Down payment must be less than the computed system price',
         {
-          systemPriceUsd,
+          systemPriceEur,
         },
       );
     }
 
+    const email = dto.email.trim().toLowerCase();
+    const fullName = dto.fullName.trim();
+
     const result = this.pricingService.buildQuoteResult({
       monthlyConsumptionKwh: dto.monthlyConsumptionKwh,
       systemSizeKw: dto.systemSizeKw,
-      downPaymentUsd: dto.downPayment,
+      downPaymentEur: dto.downPayment,
       installationAddress: dto.installationAddress,
     });
+
+    const resultWithContact = {
+      ...result,
+      inputs: {
+        ...result.inputs,
+        fullName,
+        email,
+      },
+    };
+
+    const stored = serializeQuoteResultPayload(resultWithContact);
 
     const row = await this.quotesRepository.create({
       userId,
       monthlyConsumptionKwh: Math.round(dto.monthlyConsumptionKwh),
       systemSizeKw: dto.systemSizeKw,
-      downPaymentUsd: result.inputs.downPaymentUsd,
-      result,
+      downPaymentEurCents: stored.inputs.downPaymentEurCents,
+      result: stored,
     });
 
     return this.toResponse(row);
+  }
+
+  async getAmortizationSchedule(
+    quoteId: string,
+    requester: RequestUser,
+    termYears: number,
+  ): Promise<QuoteAmortizationScheduleDto> {
+    if (!ALLOWED_AMORTIZATION_TERMS.has(termYears)) {
+      throw AppException.badRequest('termYears must be 5, 10, or 15', {
+        termYears,
+      });
+    }
+
+    const row = await this.quotesRepository.findByIdWithUser(quoteId);
+    if (!row) {
+      throw AppException.notFound('Quote not found');
+    }
+    if (requester.role !== 'admin' && row.quote.userId !== requester.userId) {
+      throw AppException.forbidden('You do not have access to this quote');
+    }
+
+    const payload = deserializeQuoteResultStored(row.quote.result);
+    const offer = payload.offers.find((o) => o.termYears === termYears);
+    if (!offer) {
+      throw AppException.badRequest('No installment offer for this term', {
+        termYears,
+      });
+    }
+
+    const rows = buildAmortizationSchedule({
+      principalEur: offer.principalUsed,
+      annualAprPercent: offer.apr,
+      termYears: offer.termYears,
+      monthlyPaymentEur: offer.monthlyPayment,
+    });
+
+    return {
+      termYears: offer.termYears,
+      apr: offer.apr,
+      principalEur: offer.principalUsed,
+      monthlyPayment: offer.monthlyPayment,
+      rows,
+      totalInterestEur: totalInterestPaid(rows),
+    };
   }
 
   async findOne(
@@ -106,19 +187,64 @@ export class QuotesService {
     });
   }
 
-  async listMine(userId: string): Promise<QuoteSummaryDto[]> {
-    const rows = await this.quotesRepository.findByUserIdWithUser(userId);
-    return rows.map((r) =>
+  async listMine(
+    userId: string,
+    page = 1,
+    limit = 30,
+  ): Promise<{
+    items: QuoteSummaryDto[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const safeLimit = Math.min(30, Math.max(1, limit));
+    const safePage = Math.max(1, page);
+    const offset = (safePage - 1) * safeLimit;
+
+    const [total, rows] = await Promise.all([
+      this.quotesRepository.countByUserId(userId),
+      this.quotesRepository.findByUserIdWithUserPaginated(
+        userId,
+        safeLimit,
+        offset,
+      ),
+    ]);
+
+    const items = rows.map((r) =>
       this.toSummary(r.quote, {
         userEmail: r.userEmail,
         userName: r.userName,
       }),
     );
+
+    return {
+      items,
+      total,
+      page: safePage,
+      limit: safeLimit,
+    };
   }
 
-  async listAll(search?: string): Promise<AdminQuoteRowDto[]> {
-    const rows = await this.quotesRepository.findAllForAdmin(search);
-    return rows.map((r): AdminQuoteRowDto => {
+  async listAll(
+    search?: string,
+    page = 1,
+    limit = 30,
+  ): Promise<{
+    items: AdminQuoteRowDto[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const safeLimit = Math.min(30, Math.max(1, limit));
+    const safePage = Math.max(1, page);
+    const offset = (safePage - 1) * safeLimit;
+
+    const [total, rows] = await Promise.all([
+      this.quotesRepository.countAllForAdmin(search),
+      this.quotesRepository.findAllForAdmin(search, safeLimit, offset),
+    ]);
+
+    const items = rows.map((r): AdminQuoteRowDto => {
       const summary = this.toSummary(r.quote, {
         userEmail: r.userEmail,
         userName: r.userName,
@@ -129,6 +255,13 @@ export class QuotesService {
         userName: r.userName,
       };
     });
+
+    return {
+      items,
+      total,
+      page: safePage,
+      limit: safeLimit,
+    };
   }
 
   private toSummary(
@@ -141,24 +274,32 @@ export class QuotesService {
       id: row.id,
       createdAt: row.createdAt,
       systemSizeKw: row.systemSizeKw,
-      systemPrice: row.result.derived.systemPriceUsd,
+      systemPrice: centsToEur(row.result.derived.systemPriceEurCents),
       riskBand: row.result.derived.riskBand,
-      ...(user
-        ? { userName: user.userName, userEmail: user.userEmail }
-        : {}),
+      ...(user ? { userName: user.userName, userEmail: user.userEmail } : {}),
       ...(city ? { city } : {}),
     };
   }
 
   private toResponse(
     row: QuoteRow,
-    contact?: { fullName: string; email: string },
+    userContact?: { fullName: string; email: string },
   ): QuoteResponseDto {
+    const payload = deserializeQuoteResultStored(row.result);
+    const inputs = payload.inputs;
+    const contactFromSnapshot =
+      inputs.fullName !== undefined || inputs.email !== undefined
+        ? {
+            fullName: inputs.fullName ?? userContact?.fullName ?? '',
+            email: inputs.email ?? userContact?.email ?? '',
+          }
+        : userContact;
+
     return {
       id: row.id,
       createdAt: row.createdAt,
-      ...(contact ? { contact } : {}),
-      ...row.result,
+      ...(contactFromSnapshot ? { contact: contactFromSnapshot } : {}),
+      ...payload,
     };
   }
 }

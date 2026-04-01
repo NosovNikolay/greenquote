@@ -1,13 +1,29 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  IsEmail,
   IsNumber,
   IsOptional,
   IsString,
   MaxLength,
   Min,
+  MinLength,
 } from 'class-validator';
 
 export class CreateQuoteDto {
+  @ApiProperty({
+    example: 'Jane Solar',
+    description: 'As entered on the quote form',
+  })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(255)
+  fullName!: string;
+
+  @ApiProperty({ example: 'jane@example.com' })
+  @IsEmail()
+  @MaxLength(255)
+  email!: string;
+
   @ApiProperty({
     example: 450,
     description: 'Average monthly consumption (kWh)',
@@ -21,7 +37,7 @@ export class CreateQuoteDto {
   @Min(0.01)
   systemSizeKw!: number;
 
-  @ApiProperty({ example: 1500, description: 'USD down payment' })
+  @ApiProperty({ example: 1500, description: 'EUR down payment' })
   @IsNumber()
   @Min(0)
   downPayment!: number;

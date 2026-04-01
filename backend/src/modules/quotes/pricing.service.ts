@@ -5,8 +5,8 @@ import type {
   RiskBand,
 } from '../../common/types/quote-result.types';
 
-const CURRENCY = 'USD' as const;
-const PRICE_PER_KW_USD = 1200;
+const CURRENCY = 'EUR' as const;
+const PRICE_PER_KW_EUR = 1200;
 const TERM_YEARS = [5, 10, 15] as const;
 
 const APR_BY_BAND: Record<RiskBand, number> = {
@@ -23,11 +23,11 @@ export class PricingService {
   buildQuoteResult(input: {
     monthlyConsumptionKwh: number;
     systemSizeKw: number;
-    downPaymentUsd: number;
+    downPaymentEur: number;
     installationAddress?: string;
   }): QuoteResultPayload {
-    const systemPriceUsd = this.roundUsd(input.systemSizeKw * PRICE_PER_KW_USD);
-    const principalUsd = this.roundUsd(systemPriceUsd - input.downPaymentUsd);
+    const systemPriceEur = this.roundEur(input.systemSizeKw * PRICE_PER_KW_EUR);
+    const principalEur = this.roundEur(systemPriceEur - input.downPaymentEur);
 
     const riskBand = this.resolveRiskBand(
       input.monthlyConsumptionKwh,
@@ -38,9 +38,9 @@ export class PricingService {
     const offers: QuoteOffer[] = TERM_YEARS.map((termYears) => ({
       termYears,
       apr: aprPercent,
-      principalUsed: principalUsd,
-      monthlyPayment: this.monthlyPaymentUsd(
-        principalUsd,
+      principalUsed: principalEur,
+      monthlyPayment: this.monthlyPaymentEur(
+        principalEur,
         aprPercent,
         termYears,
       ),
@@ -50,7 +50,7 @@ export class PricingService {
       inputs: {
         monthlyConsumptionKwh: input.monthlyConsumptionKwh,
         systemSizeKw: input.systemSizeKw,
-        downPaymentUsd: this.roundUsd(input.downPaymentUsd),
+        downPaymentEur: this.roundEur(input.downPaymentEur),
         ...(input.installationAddress !== undefined &&
         input.installationAddress !== ''
           ? { installationAddress: input.installationAddress }
@@ -58,8 +58,8 @@ export class PricingService {
       },
       derived: {
         currency: CURRENCY,
-        systemPriceUsd,
-        principalUsd,
+        systemPriceEur,
+        principalEur,
         riskBand,
         aprPercent,
       },
@@ -79,7 +79,7 @@ export class PricingService {
   /**
    * Standard fixed-rate loan amortization: M = P * [r(1+r)^n] / [(1+r)^n - 1]
    */
-  monthlyPaymentUsd(
+  monthlyPaymentEur(
     principal: number,
     annualAprPercent: number,
     termYears: number,
@@ -87,14 +87,14 @@ export class PricingService {
     const n = termYears * 12;
     const r = annualAprPercent / 100 / 12;
     if (r === 0) {
-      return this.roundUsd(principal / n);
+      return this.roundEur(principal / n);
     }
     const factor = Math.pow(1 + r, n);
     const payment = (principal * (r * factor)) / (factor - 1);
-    return this.roundUsd(payment);
+    return this.roundEur(payment);
   }
 
-  private roundUsd(value: number): number {
+  private roundEur(value: number): number {
     return Math.round(value * 100) / 100;
   }
 }
