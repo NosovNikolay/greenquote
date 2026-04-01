@@ -9,7 +9,6 @@ import {
 import { Request, Response } from 'express';
 import { AppException } from '../exceptions/app.exception';
 import { ErrorCode } from '../exceptions/error-codes';
-import { notifyErrorReporting } from './sentry-notifier';
 
 interface ErrorBody {
   statusCode: number;
@@ -31,7 +30,6 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     const body = this.toErrorBody(exception, request.url);
     if (body.statusCode >= 500) {
-      notifyErrorReporting(exception);
       this.logger.error(
         exception instanceof Error ? exception.stack : String(exception),
         `${request.method} ${request.url}`,
@@ -81,6 +79,19 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       };
     }
 
+    /** FK violation: e.g. JWT user id no longer in DB after reset — avoid opaque 500. */
+    const pgCode = this.findPostgresErrorCode(exception);
+    if (pgCode === '23503') {
+      return {
+        statusCode: HttpStatus.UNAUTHORIZED,
+        code: ErrorCode.UNAUTHORIZED,
+        message:
+          'Your session is no longer valid for this database. Please sign in again.',
+        path,
+        timestamp,
+      };
+    }
+
     return {
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       code: ErrorCode.INTERNAL,
@@ -88,6 +99,34 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       path,
       timestamp,
     };
+  }
+
+  /** Walks Error.cause chain (Drizzle wraps node-postgres errors). */
+  private findPostgresErrorCode(exception: unknown): string | undefined {
+    const seen = new Set<unknown>();
+    let current: unknown = exception;
+    for (let depth = 0; depth < 10 && current != null; depth++) {
+      if (seen.has(current)) {
+        break;
+      }
+      seen.add(current);
+      if (typeof current === 'object' && current !== null && 'code' in current) {
+        const code = (current as { code: unknown }).code;
+        if (typeof code === 'string' && /^[0-9]{5}$/.test(code)) {
+          return code;
+        }
+      }
+      if (
+        current instanceof Error &&
+        'cause' in current &&
+        (current as Error & { cause?: unknown }).cause !== undefined
+      ) {
+        current = (current as Error & { cause: unknown }).cause;
+        continue;
+      }
+      break;
+    }
+    return undefined;
   }
 
   private stringifyMessage(message: unknown): string {
