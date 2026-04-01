@@ -1,15 +1,16 @@
 import { createGreenquoteClient } from "@greenquote/sdk";
 import { getToken } from "next-auth/jwt";
 import type { NextRequest } from "next/server";
+import { requireApiBaseUrl } from "./api-url";
 
 /**
- * Server-only typed client for the Nest API. Returns null when `API_URL` is unset (local BFF-only mode).
+ * Typed Nest client for **server-side Route Handlers only**.
+ * Requires `API_URL` (see `frontend/.env.example`). Quotes and auth always go through Nest.
+ *
+ * The browser never imports this; it calls `/api/*` (same-origin, cookie session).
  */
 export function createServerSdk(req: NextRequest) {
-  const baseUrl = process.env.API_URL?.replace(/\/$/, "");
-  if (!baseUrl) {
-    return null;
-  }
+  const baseUrl = requireApiBaseUrl();
   return createGreenquoteClient({
     baseUrl,
     getAccessToken: async () => {

@@ -1,14 +1,15 @@
 import type {
   AdminQuoteRow,
+  PreQualifyResponse,
   QuoteDetail,
   QuoteSummary,
 } from "@/lib/api/types";
-import type { components } from "@greenquote/sdk";
-
-type ApiQuoteDetail = components["schemas"]["QuoteDetail"];
-type ApiQuoteSummary = components["schemas"]["QuoteSummary"];
-type ApiAdminRow = components["schemas"]["AdminQuoteRow"];
-type ApiQuoteOffer = components["schemas"]["QuoteOffer"];
+import type {
+  ApiAdminQuoteRow,
+  ApiQuoteDetail,
+  ApiQuoteOffer,
+  ApiQuoteSummary,
+} from "@/lib/api/sdk-types";
 
 export function mapApiQuoteDetailToView(q: ApiQuoteDetail): QuoteDetail {
   const createdAt =
@@ -57,10 +58,23 @@ export function mapApiQuoteSummaryToView(row: ApiQuoteSummary): QuoteSummary {
   };
 }
 
-export function mapApiAdminRowToView(row: ApiAdminRow): AdminQuoteRow {
+export function mapApiAdminRowToView(row: ApiAdminQuoteRow): AdminQuoteRow {
+  return mapApiQuoteSummaryToView(row) as AdminQuoteRow;
+}
+
+/** `POST /quotes` response shape → same payload the local BFF returns after pre-qualify. */
+export function mapNestCreateQuoteToPreQualify(
+  data: ApiQuoteDetail,
+): PreQualifyResponse {
   return {
-    ...mapApiQuoteSummaryToView(row),
-    userEmail: row.userEmail,
-    userName: row.userName,
+    quoteId: data.id,
+    systemPrice: data.derived.systemPriceUsd,
+    riskBand: data.derived.riskBand as PreQualifyResponse["riskBand"],
+    installmentOffers: data.offers.map((o: ApiQuoteOffer) => ({
+      termYears: o.termYears as 5 | 10 | 15,
+      monthlyPayment: o.monthlyPayment,
+      apr: o.apr,
+      principalUsd: o.principalUsed,
+    })),
   };
 }

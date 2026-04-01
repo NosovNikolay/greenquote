@@ -1,6 +1,9 @@
 /**
- * Browser-safe API client (calls same-origin BFF). Replace baseUrl with
- * process.env.NEXT_PUBLIC_API_URL when SDK talks to Nest directly with Bearer tokens.
+ * Browser client: same-origin `/api/*` routes only (cookie session).
+ * For Nest types & shapes, import from `@/lib/api/types` or `@greenquote/sdk` `components`.
+ *
+ * Server-side calls to Nest use `createServerSdk` in Route Handlers — not this file.
+ * `API_URL` must be set; the app is wired to the Nest API only.
  */
 import type {
   AdminQuoteRow,

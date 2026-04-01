@@ -58,14 +58,80 @@ function bandClass(band: string) {
   }
 }
 
+function InstallmentAndAmortization({ detail }: { detail: QuoteDetail }) {
+  const [selectedTermYears, setSelectedTermYears] = useState<
+    5 | 10 | 15 | null
+  >(null);
+
+  const activeTermYears = useMemo(() => {
+    if (!detail.installmentOffers?.length) return null;
+    if (
+      selectedTermYears != null &&
+      detail.installmentOffers.some((o) => o.termYears === selectedTermYears)
+    ) {
+      return selectedTermYears;
+    }
+    return detail.installmentOffers[0]!.termYears;
+  }, [detail, selectedTermYears]);
+
+  const selectedOffer = useMemo(() => {
+    if (activeTermYears == null) return undefined;
+    return detail.installmentOffers.find((o) => o.termYears === activeTermYears);
+  }, [detail, activeTermYears]);
+
+  return (
+    <>
+      <Card>
+        <CardTitle className="mb-4">Installment offers</CardTitle>
+        <p className="mb-3 text-sm text-[var(--muted)]">
+          Select a term to view the amortization schedule below.
+        </p>
+        <ul className="grid gap-2 sm:grid-cols-3">
+          {detail.installmentOffers.map((o) => (
+            <li key={o.termYears}>
+              <button
+                type="button"
+                onClick={() => setSelectedTermYears(o.termYears)}
+                className={cn(
+                  "flex w-full flex-col rounded-[var(--radius-md)] border px-4 py-3 text-left text-sm transition-colors",
+                  activeTermYears === o.termYears
+                    ? "border-[var(--accent)] bg-[var(--accent-soft)] ring-1 ring-[var(--accent)]"
+                    : "border-[var(--card-border)] bg-[#fafcfb] hover:bg-[#f0f4f2]",
+                )}
+              >
+                <span className="text-[var(--muted)]">{o.termYears} years</span>
+                <span className="mt-1 text-lg font-semibold tabular-nums">
+                  {formatCurrency(o.monthlyPayment)}
+                  <span className="ml-1 text-xs font-normal text-[var(--muted)]">
+                    /mo
+                  </span>
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-6 text-xs text-[var(--muted)]">
+          Figures are indicative and not a binding financing offer.
+        </p>
+      </Card>
+
+      <Card>
+        <CardTitle className="mb-2">Amortization schedule</CardTitle>
+        <p className="mb-4 text-sm text-[var(--muted)]">
+          Month-by-month breakdown of each payment into principal and interest,
+          and the remaining loan balance (fixed-rate loan, annuity method).
+        </p>
+        <AmortizationSchedule offer={selectedOffer} />
+      </Card>
+    </>
+  );
+}
+
 export function QuoteDetailView() {
   const params = useParams();
   const id = typeof params.id === "string" ? params.id : "";
   const [detail, setDetail] = useState<QuoteDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [selectedTermYears, setSelectedTermYears] = useState<
-    5 | 10 | 15 | null
-  >(null);
 
   useEffect(() => {
     if (!id) return;
@@ -83,26 +149,6 @@ export function QuoteDetailView() {
       cancelled = true;
     };
   }, [id]);
-
-  useEffect(() => {
-    setSelectedTermYears(null);
-  }, [detail?.id]);
-
-  const activeTermYears = useMemo(() => {
-    if (!detail?.installmentOffers?.length) return null;
-    if (
-      selectedTermYears != null &&
-      detail.installmentOffers.some((o) => o.termYears === selectedTermYears)
-    ) {
-      return selectedTermYears;
-    }
-    return detail.installmentOffers[0]!.termYears;
-  }, [detail, selectedTermYears]);
-
-  const selectedOffer = useMemo(() => {
-    if (!detail || activeTermYears == null) return undefined;
-    return detail.installmentOffers.find((o) => o.termYears === activeTermYears);
-  }, [detail, activeTermYears]);
 
   if (error) {
     return (
@@ -260,6 +306,7 @@ export function QuoteDetailView() {
         <Card>
           <CardTitle className="mb-4">Location</CardTitle>
           <QuoteMinimap
+            key={detail.id}
             address={detail.address}
             lat={detail.addressLat}
             lon={detail.addressLon}
@@ -267,48 +314,7 @@ export function QuoteDetailView() {
         </Card>
       </div>
 
-      <Card>
-        <CardTitle className="mb-4">Installment offers</CardTitle>
-        <p className="mb-3 text-sm text-[var(--muted)]">
-          Select a term to view the amortization schedule below.
-        </p>
-        <ul className="grid gap-2 sm:grid-cols-3">
-          {detail.installmentOffers.map((o) => (
-            <li key={o.termYears}>
-              <button
-                type="button"
-                onClick={() => setSelectedTermYears(o.termYears)}
-                className={cn(
-                  "flex w-full flex-col rounded-[var(--radius-md)] border px-4 py-3 text-left text-sm transition-colors",
-                  activeTermYears === o.termYears
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)] ring-1 ring-[var(--accent)]"
-                    : "border-[var(--card-border)] bg-[#fafcfb] hover:bg-[#f0f4f2]",
-                )}
-              >
-                <span className="text-[var(--muted)]">{o.termYears} years</span>
-                <span className="mt-1 text-lg font-semibold tabular-nums">
-                  {formatCurrency(o.monthlyPayment)}
-                  <span className="ml-1 text-xs font-normal text-[var(--muted)]">
-                    /mo
-                  </span>
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-        <p className="mt-6 text-xs text-[var(--muted)]">
-          Figures are indicative and not a binding financing offer.
-        </p>
-      </Card>
-
-      <Card>
-        <CardTitle className="mb-2">Amortization schedule</CardTitle>
-        <p className="mb-4 text-sm text-[var(--muted)]">
-          Month-by-month breakdown of each payment into principal and interest,
-          and the remaining loan balance (fixed-rate loan, annuity method).
-        </p>
-        <AmortizationSchedule offer={selectedOffer} />
-      </Card>
+      <InstallmentAndAmortization key={detail.id} detail={detail} />
     </div>
   );
 }

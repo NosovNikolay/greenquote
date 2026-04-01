@@ -17,7 +17,7 @@ declare module "next-auth/jwt" {
   interface JWT {
     id: string;
     role: "user" | "admin";
-    /** Nest JWT when `API_URL` is set (server-side BFF only). */
+    /** Nest JWT for BFF calls to the API (server-side only). */
     accessToken?: string;
   }
 }

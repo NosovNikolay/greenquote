@@ -8,17 +8,34 @@ type Props = {
   lon?: number | null;
 };
 
+function coordsFromProps(
+  lat: number | null | undefined,
+  lon: number | null | undefined,
+): { lat: number; lon: number } | null {
+  if (
+    lat != null &&
+    lon != null &&
+    !Number.isNaN(lat) &&
+    !Number.isNaN(lon)
+  ) {
+    return { lat, lon };
+  }
+  return null;
+}
+
 export function QuoteMinimap({ address, lat, lon }: Props) {
-  const [resolved, setResolved] = useState<{
-    lat: number;
-    lon: number;
-  } | null>(() =>
-    lat != null && lon != null ? { lat, lon } : null,
+  const fromProps = coordsFromProps(lat, lon);
+  const [fetched, setFetched] = useState<{ lat: number; lon: number } | null>(
+    null,
   );
 
   useEffect(() => {
-    if (lat != null && lon != null) {
-      setResolved({ lat, lon });
+    if (
+      lat != null &&
+      lon != null &&
+      !Number.isNaN(lat) &&
+      !Number.isNaN(lon)
+    ) {
       return;
     }
     let cancelled = false;
@@ -32,13 +49,10 @@ export function QuoteMinimap({ address, lat, lon }: Props) {
           lat: number | null;
           lon: number | null;
         };
-        if (
-          data.lat != null &&
-          data.lon != null &&
-          !Number.isNaN(data.lat) &&
-          !Number.isNaN(data.lon)
-        ) {
-          setResolved({ lat: data.lat, lon: data.lon });
+        if (cancelled) return;
+        const next = coordsFromProps(data.lat, data.lon);
+        if (next) {
+          setFetched(next);
         }
       } catch {
         /* minimap optional */
@@ -48,6 +62,8 @@ export function QuoteMinimap({ address, lat, lon }: Props) {
       cancelled = true;
     };
   }, [address, lat, lon]);
+
+  const resolved = fromProps ?? fetched;
 
   if (!resolved) {
     return (
