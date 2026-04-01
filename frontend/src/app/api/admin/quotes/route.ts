@@ -14,15 +14,31 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const q = searchParams.get("q") ?? undefined;
+  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
+  const limit = Math.min(
+    30,
+    Math.max(1, parseInt(searchParams.get("limit") ?? "30", 10) || 30),
+  );
 
   const sdk = createServerSdk(req);
   const { data, response } = await sdk.GET("/admin/quotes", {
-    params: { query: q ? { q } : {} },
+    params: {
+      query: {
+        ...(q ? { q } : {}),
+        page,
+        limit,
+      },
+    },
   });
   if (response.ok && data) {
-    return NextResponse.json(
-      data.map((row: ApiAdminQuoteRow) => mapApiAdminRowToView(row)),
-    );
+    return NextResponse.json({
+      items: data.items.map((row: ApiAdminQuoteRow) =>
+        mapApiAdminRowToView(row),
+      ),
+      total: data.total,
+      page: data.page,
+      limit: data.limit,
+    });
   }
   return upstreamErrorResponse(response.status);
 }

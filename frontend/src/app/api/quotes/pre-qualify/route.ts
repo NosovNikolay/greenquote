@@ -38,6 +38,8 @@ export async function POST(req: NextRequest) {
 
   const { data, error, response } = await sdk.POST("/quotes", {
     body: {
+      fullName: body.fullName.trim(),
+      email: body.email.trim().toLowerCase(),
       monthlyConsumptionKwh: body.monthlyConsumptionKwh,
       systemSizeKw: body.systemSizeKw,
       downPayment: body.downPayment ?? 0,
@@ -53,7 +55,7 @@ export async function POST(req: NextRequest) {
 
   const message = formatUpstreamErrorMessage(error);
   return NextResponse.json(
-    { error: message, details: error },
+    { error: message },
     { status: response.status >= 400 ? response.status : 502 },
   );
 }
