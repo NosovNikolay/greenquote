@@ -1,0 +1,352 @@
+openapi: 3.0.3
+info:
+  title: Greenquote API
+  version: 0.1.0
+  description: Residential solar pre-qualification — NestJS backend (`/api` prefix).
+
+servers:
+  - url: http://localhost:3001/api
+    description: Local development
+
+paths:
+  /health:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Liveness probe
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register and receive a JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login and receive a JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /quotes:
+    get:
+      operationId: listMyQuotes
+      tags: [quotes]
+      summary: List quotes for the authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/QuoteSummary"
+    post:
+      operationId: createQuote
+      tags: [quotes]
+      summary: Create a pre-qualification quote
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateQuoteRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteDetail"
+
+  /quotes/{id}:
+    get:
+      operationId: getQuoteById
+      tags: [quotes]
+      summary: Get a single quote (owner or admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteDetail"
+
+  /admin/quotes:
+    get:
+      operationId: listAllQuotesAdmin
+      tags: [admin]
+      summary: List all quotes (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by user email or name (substring)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminQuoteRow"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    HealthStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    RegisterRequest:
+      type: object
+      required: [fullName, email, password]
+      properties:
+        fullName:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+
+    AuthResponse:
+      type: object
+      required: [access_token, user]
+      properties:
+        access_token:
+          type: string
+        user:
+          type: object
+          required: [id, email, fullName, role]
+          properties:
+            id:
+              type: string
+              format: uuid
+            email:
+              type: string
+            fullName:
+              type: string
+            role:
+              type: string
+
+    CreateQuoteRequest:
+      type: object
+      required:
+        - monthlyConsumptionKwh
+        - systemSizeKw
+        - downPayment
+      properties:
+        monthlyConsumptionKwh:
+          type: number
+        systemSizeKw:
+          type: number
+        downPayment:
+          type: number
+          description: USD
+        installationAddress:
+          type: string
+          maxLength: 500
+
+    QuoteOffer:
+      type: object
+      required:
+        - termYears
+        - apr
+        - principalUsed
+        - monthlyPayment
+      properties:
+        termYears:
+          type: integer
+        apr:
+          type: number
+        principalUsed:
+          type: number
+        monthlyPayment:
+          type: number
+
+    QuoteInputs:
+      type: object
+      required:
+        - monthlyConsumptionKwh
+        - systemSizeKw
+        - downPaymentUsd
+      properties:
+        monthlyConsumptionKwh:
+          type: number
+        systemSizeKw:
+          type: number
+        downPaymentUsd:
+          type: number
+        installationAddress:
+          type: string
+
+    QuoteDerived:
+      type: object
+      required:
+        - currency
+        - systemPriceUsd
+        - principalUsd
+        - riskBand
+        - aprPercent
+      properties:
+        currency:
+          type: string
+          enum: [USD]
+        systemPriceUsd:
+          type: number
+        principalUsd:
+          type: number
+        riskBand:
+          type: string
+          enum: [A, B, C]
+        aprPercent:
+          type: number
+
+    Contact:
+      type: object
+      required: [fullName, email]
+      properties:
+        fullName:
+          type: string
+        email:
+          type: string
+
+    QuoteDetail:
+      type: object
+      required:
+        - id
+        - createdAt
+        - inputs
+        - derived
+        - offers
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        contact:
+          $ref: "#/components/schemas/Contact"
+        inputs:
+          $ref: "#/components/schemas/QuoteInputs"
+        derived:
+          $ref: "#/components/schemas/QuoteDerived"
+        offers:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuoteOffer"
+
+    QuoteSummary:
+      type: object
+      required:
+        - id
+        - createdAt
+        - systemSizeKw
+        - systemPrice
+        - riskBand
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        systemSizeKw:
+          type: number
+        systemPrice:
+          type: number
+        riskBand:
+          type: string
+          enum: [A, B, C]
+        userName:
+          type: string
+          description: Contact display name (list views)
+        userEmail:
+          type: string
+        city:
+          type: string
+          description: Installation city derived from address when available
+
+    AdminQuoteRow:
+      allOf:
+        - $ref: "#/components/schemas/QuoteSummary"
+        - type: object
+          required: [userEmail, userName]
+          properties:
+            userEmail:
+              type: string
+            userName:
+              type: string
