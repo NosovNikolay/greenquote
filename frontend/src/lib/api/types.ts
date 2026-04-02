@@ -20,8 +20,26 @@ export interface InstallmentOffer {
   monthlyPayment: number;
   /** Annual percentage rate (e.g. 6.9 for 6.9%). */
   apr: number;
-  /** Financed amount after down payment (USD). */
-  principalUsd: number;
+  /** Financed amount after down payment (EUR). */
+  principalEur: number;
+}
+
+/** From `GET /quotes/{id}/amortization?termYears=` (server-computed). */
+export interface AmortizationScheduleRow {
+  month: number;
+  payment: number;
+  principal: number;
+  interest: number;
+  balanceRemaining: number;
+}
+
+export interface AmortizationScheduleResponse {
+  termYears: 5 | 10 | 15;
+  apr: number;
+  principalEur: number;
+  monthlyPayment: number;
+  rows: AmortizationScheduleRow[];
+  totalInterestEur: number;
 }
 
 export interface PreQualifyResponse {
@@ -46,6 +64,21 @@ export interface QuoteSummary {
 export interface AdminQuoteRow extends QuoteSummary {
   userEmail: string;
   userName: string;
+}
+
+export interface AdminQuotesListResponse {
+  items: AdminQuoteRow[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+/** Same shape as admin list; items are the current user's quotes only. */
+export interface MyQuotesListResponse {
+  items: QuoteSummary[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
 export interface QuoteDetail extends QuoteSummary {

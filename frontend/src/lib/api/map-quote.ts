@@ -20,7 +20,7 @@ export function mapApiQuoteDetailToView(q: ApiQuoteDetail): QuoteDetail {
     id: q.id,
     createdAt,
     systemSizeKw: q.inputs.systemSizeKw,
-    systemPrice: q.derived.systemPriceUsd,
+    systemPrice: q.derived.systemPriceEur,
     riskBand: q.derived.riskBand,
     fullName: q.contact?.fullName ?? "",
     email: q.contact?.email ?? "",
@@ -29,12 +29,12 @@ export function mapApiQuoteDetailToView(q: ApiQuoteDetail): QuoteDetail {
     city: undefined,
     country: undefined,
     monthlyConsumptionKwh: q.inputs.monthlyConsumptionKwh,
-    downPayment: q.inputs.downPaymentUsd,
+    downPayment: q.inputs.downPaymentEur,
     installmentOffers: q.offers.map((o: ApiQuoteOffer) => ({
       termYears: o.termYears as 5 | 10 | 15,
       monthlyPayment: o.monthlyPayment,
       apr: o.apr,
-      principalUsd: o.principalUsed,
+      principalEur: o.principalUsed,
     })),
     addressLat: null,
     addressLon: null,
@@ -68,13 +68,13 @@ export function mapNestCreateQuoteToPreQualify(
 ): PreQualifyResponse {
   return {
     quoteId: data.id,
-    systemPrice: data.derived.systemPriceUsd,
+    systemPrice: data.derived.systemPriceEur,
     riskBand: data.derived.riskBand as PreQualifyResponse["riskBand"],
     installmentOffers: data.offers.map((o: ApiQuoteOffer) => ({
       termYears: o.termYears as 5 | 10 | 15,
       monthlyPayment: o.monthlyPayment,
       apr: o.apr,
-      principalUsd: o.principalUsed,
+      principalEur: o.principalUsed,
     })),
   };
 }

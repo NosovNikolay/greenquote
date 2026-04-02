@@ -12,13 +12,27 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { searchParams } = new URL(req.url);
+  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
+  const limit = Math.min(
+    30,
+    Math.max(1, parseInt(searchParams.get("limit") ?? "30", 10) || 30),
+  );
+
   const sdk = createServerSdk(req);
-  const { data, response } = await sdk.GET("/quotes");
+  const { data, response } = await sdk.GET("/quotes", {
+    params: { query: { page, limit } },
+  });
   if (response.ok && data) {
-    const rows = data.map((row: ApiQuoteSummary) =>
+    const items = data.items.map((row: ApiQuoteSummary) =>
       mapApiQuoteSummaryToView(row),
     );
-    return NextResponse.json(rows);
+    return NextResponse.json({
+      items,
+      total: data.total,
+      page: data.page,
+      limit: data.limit,
+    });
   }
   return upstreamErrorResponse(response.status);
 }
