@@ -135,44 +135,36 @@ pnpm run dev:web
 
 Backend-specific scripts (`cd backend`): `pnpm run db:up`, `pnpm run db:migrate`, `pnpm run db:seed`, `pnpm test`, `pnpm run test:e2e`.
 
-## Design notes
+## Production readiness
 
-### Why this stack and architecture? What trade-offs?
+The app is suitable for local development and demos. To run it **in production**, plan for at least the following.
 
-- **pnpm workspace** — one lockfile, fast installs, shared `@greenquote/sdk` without publishing; clear boundary between UI and API.
-- **Next.js + NestJS** — separates SSR/BFF concerns from domain and persistence; the API can be scaled or deployed independently and keeps business rules out of the edge bundle.
-- **Drizzle + PostgreSQL** — SQL-first migrations and typed queries without a heavy codegen step; good fit for a small, explicit schema.
-- **OpenAPI → TypeScript SDK** — single source of truth for request/response shapes; reduces drift between frontend and backend compared to hand-written DTOs on both sides.
-- **Trade-offs** — more moving parts than a single Next.js app with server actions only; e2e tests require a running DB. The BFF pattern (Next calling Nest) adds a network hop locally but mirrors production and keeps auth/session logic clear.
+### Packaging & dependencies
 
-### If you had another day, what would you add or change first?
+- **Published packages:** Today **`@greenquote/constants`** and **`@greenquote/sdk`** are consumed via **`workspace:*`** and built with the repo (`pnpm run build:all`). For production you would typically **publish semver’d packages** to a registry (npm org or private registry) and depend on versions instead of building workspace packages inside every deploy—clearer supply chain and faster CI when only app code changes.
 
-Priorities would likely be: **GitHub Actions** (lint, typecheck, unit + e2e against Postgres service), **Playwright or expanded API e2e** for critical user journeys through the UI, and **observability** (structured logs already; add metrics/tracing IDs end-to-end). Secondary: rate limiting and admin audit logs for quote access.
+### Containers & runtime
 
-### How would you implement CI/CD and what would you test?
+- **Docker for services:** Ship **production Dockerfiles** (multi-stage, non-root user) for the **Nest API** and **Next.js** app, plus **compose/Kubernetes manifests** or your cloud’s equivalent. The repo today only uses Docker for **local Postgres**; production should target **managed PostgreSQL** and wire health checks to **`/api/health`**.
 
-- **On every PR / push to main:** `pnpm install --frozen-lockfile`, **ESLint** (frontend + backend as configured), **TypeScript** `tsc --noEmit` or `next build` / `nest build` in CI, **unit tests** (`jest` in `backend/test/unit/**/*.spec.ts`).
-- **Integration / e2e:** run **Postgres** as a service container, set `DATABASE_URL`, run **Drizzle migrate**, then **Jest e2e** (`backend/test/e2e/*.e2e-spec.ts`) against the Nest app (Supertest).
-- **Optional nightly or pre-release:** full `pnpm run build:all`, and **smoke** against a deployed staging URL.
+### Data & search
 
-Artifacts: test reports and coverage uploaded; block merge on required checks.
+- **Admin quote search:** The admin list uses **`ILIKE`** on name/email. For production scale and relevance, replace this with **PostgreSQL full-text search** (`tsvector` columns, GIN indexes, `websearch_to_tsquery` or similar) or a dedicated search index/service.
 
-### Where would you deploy on GCP and why?
+### Security & auth
 
-- **Cloud Run** is a strong default: containerize Nest and Next (or Next standalone + API as two services), scale to zero for low traffic, HTTPS and IAM integration, simple rollouts. Fits this stack without operating Kubernetes.
-- **GKE** if you later need DaemonSets, custom networking, or multi-tenant clusters at scale — usually overkill for this app initially.
-- **App Engine** (standard) is viable for Node but is more opinionated and less portable than containers; **Cloud Run** stays the usual pick for HTTP APIs and Next on GCP unless you have specific App Engine constraints.
+- **JWT lifecycle:** Current access tokens are long-lived by configuration. Production should add **refresh tokens**, **rotation**, and a **revocation** story (server-side blocklist/session store or short-lived access + opaque refresh), and align **Auth.js** session policy with the API.
 
-Data: **Cloud SQL for PostgreSQL** (private IP + connector from Cloud Run), secrets in **Secret Manager**.
+### CI/CD
 
-### How did you approach testing, and what would you add for production readiness?
+- **Pipeline:** Add a **CI/CD pipeline** (e.g. **GitHub Actions**): install with **`pnpm install --frozen-lockfile`**, **lint**, **unit tests**, **`build:all`**, **API e2e** with a **Postgres service container**, then deploy to staging/production. Gate merges on required checks; store test artifacts as needed.
 
-- **Unit tests** in Nest (`backend/test/unit/**/*.spec.ts`) for pricing, quote service behavior, money helpers, and storage mapping.
-- **API e2e** (Jest + Supertest) for happy paths and error/validation behavior against a real Postgres schema.
+### Operations & quality (recommended)
 
-**Production readiness additions:** staged migrations with backups, **health/readiness** probes (already have `/health` conceptually — wire in orchestrator), **secrets rotation**, **CORS and rate limits**, **dependency scanning** (Dependabot/Snyk), **SLOs** and alerting on error rate and latency, and **load testing** on quote creation under concurrency.
+- **Secrets:** Load from a **secret manager** in the cloud; avoid baking secrets into images; rotate credentials.
+- **API edge:** **Rate limiting**, strict **CORS** for known web origins, request size limits.
+- **Database:** Automated **backups**, migration rollback strategy, **connection pooling** (pooler or managed offering).
+- **Observability:** **Metrics** and **tracing** (e.g. OpenTelemetry) with **alerting** on errors and latency; correlate request IDs across Next route handlers and Nest (Pino logs are a start).
+- **Testing:** **Playwright** (or similar) for critical UI flows in CI; **dependency scanning** (Dependabot/Snyk); optional **load testing** on quote creation.
 
----
-
-## Demo
-Local development uses `http://localhost:3000` and `http://localhost:3001` as above.
+**Local defaults:** web [http://localhost:3000](http://localhost:3000), API [http://localhost:3001](http://localhost:3001) — see [Quick start](#quick-start).
