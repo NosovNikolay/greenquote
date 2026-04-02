@@ -7,7 +7,6 @@ type NominatimItem = {
   lon: string;
 };
 
-/** Proxies OpenStreetMap Nominatim (usage policy: low volume, identify app). */
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q")?.trim() ?? "";
   if (q.length < 3) {

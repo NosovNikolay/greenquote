@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-/**
- * Structured Nominatim search (street + city + country).
- * Returns first match coordinates or null when nothing is found.
- */
 export async function GET(req: NextRequest) {
   const street = req.nextUrl.searchParams.get("street")?.trim() ?? "";
   const city = req.nextUrl.searchParams.get("city")?.trim() ?? "";

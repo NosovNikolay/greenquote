@@ -22,7 +22,6 @@ export const quoteFormSchema = z
     ),
     addressLat: z.number().optional(),
     addressLon: z.number().optional(),
-    /** Set when user confirms after geocoder found no match */
     confirmedUnverifiedAddress: z.boolean().optional(),
   })
   .superRefine((data, ctx) => {

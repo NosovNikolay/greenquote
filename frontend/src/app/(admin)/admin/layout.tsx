@@ -12,7 +12,7 @@ export default async function AdminSectionLayout({
     redirect("/login?callbackUrl=/admin");
   }
   if (session.user.role !== "admin") {
-    redirect("/");
+    redirect("/quotes");
   }
 
   return <AdminShell>{children}</AdminShell>;

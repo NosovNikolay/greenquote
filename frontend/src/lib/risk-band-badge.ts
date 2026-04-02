@@ -1,4 +1,3 @@
-/** Shared pill styles for risk band A / B / C (quotes + admin). */
 export function riskBandBadgeClass(band: string): string {
   switch (band) {
     case "A":

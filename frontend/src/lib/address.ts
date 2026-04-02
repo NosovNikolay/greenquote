@@ -1,4 +1,3 @@
-/** Single-line label for maps, PDFs, and upstream `installationAddress`. */
 export function formatInstallationAddress(
   streetLine: string,
   city: string,

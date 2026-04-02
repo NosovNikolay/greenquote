@@ -1,7 +1,6 @@
 import type { QuoteDetail } from "@/lib/api/types";
 import { jsPDF } from "jspdf";
 
-/** Brand palette (aligned with `globals.css` — deep greens, calm neutrals) */
 const COL = {
   primary: [13, 59, 44] as [number, number, number],
   accent: [45, 106, 79] as [number, number, number],

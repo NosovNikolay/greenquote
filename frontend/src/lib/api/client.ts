@@ -1,10 +1,3 @@
-/**
- * Browser client: same-origin `/api/*` routes only (cookie session).
- * For Nest types & shapes, import from `@/lib/api/types` or `@greenquote/sdk` `components`.
- *
- * Server-side calls to Nest use `createServerSdk` in Route Handlers — not this file.
- * `API_URL` must be set; the app is wired to the Nest API only.
- */
 import type {
   AdminQuotesListResponse,
   AmortizationScheduleResponse,
@@ -26,9 +19,7 @@ function messageFromErrorBody(text: string, fallback: string): string {
     if (typeof parsed.message === "string" && parsed.message.trim()) {
       return parsed.message.trim();
     }
-  } catch {
-    /* not JSON */
-  }
+  } catch {}
   const trimmed = text.trim();
   return trimmed || fallback;
 }

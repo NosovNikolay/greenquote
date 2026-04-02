@@ -58,7 +58,6 @@ function bandClass(band: string) {
   }
 }
 
-/** Isolated from term-selection state so changing amortization term does not re-render the hero, project card, or map. */
 const QuoteDetailMain = memo(function QuoteDetailMain({
   detail,
 }: {

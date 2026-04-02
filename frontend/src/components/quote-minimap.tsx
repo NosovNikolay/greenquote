@@ -54,9 +54,7 @@ function QuoteMinimapInner({ address, lat, lon }: Props) {
         if (next) {
           setFetched(next);
         }
-      } catch {
-        /* minimap optional */
-      }
+      } catch {}
     })();
     return () => {
       cancelled = true;
@@ -103,5 +101,4 @@ function QuoteMinimapInner({ address, lat, lon }: Props) {
   );
 }
 
-/** Avoid re-running geocode / iframe work when parent re-renders with the same location props. */
 export const QuoteMinimap = memo(QuoteMinimapInner);

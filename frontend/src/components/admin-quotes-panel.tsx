@@ -26,7 +26,6 @@ function formatDate(iso: string) {
 
 export function AdminQuotesPanel() {
   const [q, setQ] = useState("");
-  /** Debounced filter + page stay in sync: new search resets to page 1 without a separate effect. */
   const [filter, setFilter] = useState({ debouncedQ: "", page: 1 });
   const [data, setData] = useState<AdminQuotesListResponse | null>(null);
   const [error, setError] = useState<string | null>(null);

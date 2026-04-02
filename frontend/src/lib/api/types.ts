@@ -1,5 +1,3 @@
-/** Mirrors openapi/openapi.yaml — replace with generated types when using openapi-generator. */
-
 export interface PreQualifyRequest {
   fullName: string;
   email: string;
@@ -11,20 +9,16 @@ export interface PreQualifyRequest {
   downPayment?: number | null;
   addressLat?: number;
   addressLon?: number;
-  /** User acknowledged address after geocoder found no match */
   confirmedUnverifiedAddress?: boolean;
 }
 
 export interface InstallmentOffer {
   termYears: 5 | 10 | 15;
   monthlyPayment: number;
-  /** Annual percentage rate (e.g. 6.9 for 6.9%). */
   apr: number;
-  /** Financed amount after down payment (EUR). */
   principalEur: number;
 }
 
-/** From `GET /quotes/{id}/amortization?termYears=` (server-computed). */
 export interface AmortizationScheduleRow {
   month: number;
   payment: number;
@@ -55,7 +49,6 @@ export interface QuoteSummary {
   systemSizeKw: number;
   systemPrice: number;
   riskBand: string;
-  /** Present when the API returns contact context (e.g. list mine). */
   userName?: string;
   userEmail?: string;
   city?: string;
@@ -73,7 +66,6 @@ export interface AdminQuotesListResponse {
   limit: number;
 }
 
-/** Same shape as admin list; items are the current user's quotes only. */
 export interface MyQuotesListResponse {
   items: QuoteSummary[];
   total: number;
@@ -84,7 +76,6 @@ export interface MyQuotesListResponse {
 export interface QuoteDetail extends QuoteSummary {
   fullName: string;
   email: string;
-  /** Full single-line address for PDF / map search */
   address: string;
   streetLine?: string;
   city?: string;

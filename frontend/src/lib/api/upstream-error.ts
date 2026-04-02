@@ -1,4 +1,3 @@
-/** Normalize openapi-fetch error payloads for JSON responses. */
 export function formatUpstreamErrorMessage(error: unknown): string {
   if (error == null) {
     return "Upstream error";

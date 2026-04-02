@@ -62,7 +62,6 @@ export function mapApiAdminRowToView(row: ApiAdminQuoteRow): AdminQuoteRow {
   return mapApiQuoteSummaryToView(row) as AdminQuoteRow;
 }
 
-/** `POST /quotes` response shape → same payload the local BFF returns after pre-qualify. */
 export function mapNestCreateQuoteToPreQualify(
   data: ApiQuoteDetail,
 ): PreQualifyResponse {

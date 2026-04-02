@@ -76,7 +76,7 @@ export function QuotesTable() {
       <div className="rounded-[var(--radius-lg)] border border-[var(--card-border)] bg-white p-10 text-center shadow-[var(--shadow-soft)]">
         <p className="text-sm text-[var(--muted)]">You don&apos;t have any quotes yet.</p>
         <Link
-          href="/"
+          href="/new"
           className="mt-6 inline-flex min-h-11 items-center justify-center rounded-[var(--radius-md)] bg-[var(--primary)] px-8 text-sm font-medium text-white shadow-sm hover:bg-[var(--primary-hover)]"
         >
           Create quote

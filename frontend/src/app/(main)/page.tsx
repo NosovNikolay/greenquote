@@ -1,11 +1,5 @@
-import { QuoteForm } from "@/components/quote-form";
-import type { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "Solar pre-qualification | Greenquote",
-  description: "Request a residential solar pre-qualification quote.",
-};
+import { redirect } from "next/navigation";
 
 export default function HomePage() {
-  return <QuoteForm />;
+  redirect("/quotes");
 }
