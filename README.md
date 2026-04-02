@@ -14,8 +14,6 @@ A **solar panel quote and financing calculator** monorepo: users submit installa
 
 ## UI screenshots
 
-Images are stored under [`frontend/static/`](frontend/static/).
-
 ### Login
 
 ![Login](frontend/static/login-page.png)
@@ -42,7 +40,7 @@ Images are stored under [`frontend/static/`](frontend/static/).
 
 ## Prerequisites
 
-- **Node.js** 20+ (see package engines if pinned elsewhere)
+- **Node.js** 25+ (see package engines if pinned elsewhere)
 - **pnpm** 9+ (`corepack enable && corepack prepare pnpm@9.15.9 --activate` or install per [pnpm.io](https://pnpm.io/installation))
 - **Docker** (for PostgreSQL via `backend/docker-compose.yml`; host port **5433** → container 5432 to avoid clashing with a local Postgres on 5432)
 
@@ -110,7 +108,7 @@ pnpm run dev
 
 Starts:
 
-- **API** on [http://localhost:3001](http://localhost:3001) (Nest watch; health check at `/health`)
+- **API** on [http://localhost:3001](http://localhost:3001) (Nest watch; health check at `/api/health`)
 - **Next.js** on [http://localhost:3000](http://localhost:3000) by default (set **`WEB_PORT`** to use another port)
 
 `pnpm run dev` does **not** migrate or seed; run `pnpm run setup` first after clone (or when the schema or seed data is out of date).
@@ -170,11 +168,11 @@ The app is suitable for local development and demos. To run it **in production**
 
 ### Containers & runtime
 
-- **Docker for services:** Ship **production Dockerfiles** for the **Nest API** and **Next.js** app, plus **compose/Kubernetes manifests** or equialent. The repo today only uses Docker for **local Postgres**; production should target **managed PostgreSQL** and wire health checks to **`/api/health`**.
+- **Docker for services:** Ship **production Dockerfiles** for the **Nest API** and **Next.js** app, plus **compose/Kubernetes manifests** or equivalent. The repo today only uses Docker for **local Postgres**; production should target **managed PostgreSQL** and wire health checks to **`/api/health`**.
 
 ### Data & search
 
-- **Admin quote search:** The admin list uses **`ILIKE`** on name/email. For production scale and relevance, this should be replaced this with **PostgreSQL full-text search** or a dedicated search index/service.
+- **Admin quote search:** The admin list uses **`ILIKE`** on name/email. For production scale and relevance, this should be replaced with **PostgreSQL full-text search** or a dedicated search index/service.
 
 ### Security & auth
 
@@ -182,15 +180,15 @@ The app is suitable for local development and demos. To run it **in production**
 
 ### CI/CD
 
-- **Pipeline:** For prodcution build a **CI/CD pipeline** should be added (e.g. **GitHub Actions**): **install**, **lint**, **unit tests**, **`build:all`**, **API e2e** with a **Postgres service container**, then deploy to staging/production.
+- **Pipeline:** For production, add a **CI/CD pipeline**: **install**, **lint**, **unit tests**, **`build:all`**, **API e2e** with a **Postgres service container**, then deploy to staging/production.
 
-### Operations & quality (recommended)
+### Operations & quality
 
 - **Secrets:** Load from a **secret manager** in the cloud;
 - **API edge:** **Rate limiting**, strict **CORS** for known web origins, request size limits.
 - **Database:** Automated **backups**, migration rollback strategy, **connection pooling**.
-- **Data isolation** for multi-tenant system: RLS (row level sequrity by postgres) or equialent functionality to prevent any access of the data by non
-- **Observability:** **Metrics** and **tracing** (e.g. OpenTelemetry) with **alerting** on errors and latency; correlate request IDs across Next route handlers and Nest (Pino logs are a start).
-- **Testing:** **Playwright** (or similar) for critical UI flows in CI;
+- **Data isolation** for multi-tenant systems: use **PostgreSQL row-level security (RLS)** or equivalent so one tenant cannot read or modify or get another tenant’s data.
+- **Observability:** **Metrics** and **tracing** with **alerting** on errors and latency; correlate request IDs across Next route handlers and Nest.
+- **Testing:** **Playwright** for critical UI flows;
 
 **Local defaults:** web [http://localhost:3000](http://localhost:3000), API [http://localhost:3001](http://localhost:3001) — see [Quick start](#quick-start).
