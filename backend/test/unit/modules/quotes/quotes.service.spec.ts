@@ -1,3 +1,4 @@
+import { PRICE_PER_KW_EUR } from '@greenquote/constants';
 import { AppException } from '../../../../src/common/exceptions/app.exception';
 import { serializeQuoteResultPayload } from '../../../../src/common/types/quote-result-storage';
 import type { QuoteRow } from '../../../../src/database/schema';
@@ -43,7 +44,7 @@ describe('QuotesService', () => {
         email: 'test@example.com',
         monthlyConsumptionKwh: 100,
         systemSizeKw: 5,
-        downPayment: 5 * 1200,
+        downPayment: 5 * PRICE_PER_KW_EUR,
       }),
     ).rejects.toBeInstanceOf(AppException);
 
@@ -296,8 +297,8 @@ describe('QuotesService', () => {
       email: 'other@example.com',
       role: 'user',
     };
-    await expect(service.getAmortizationSchedule(row.id, other, 5)).rejects.toMatchObject(
-      { code: 'FORBIDDEN' },
-    );
+    await expect(
+      service.getAmortizationSchedule(row.id, other, 5),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
   });
 });

@@ -1,6 +1,5 @@
 import { PricingService } from '../../../../src/modules/quotes/pricing.service';
 
-/** Risk tiers (A / B / C): consumption + system size → band; band selects APR (“financing plan”). */
 describe('PricingService', () => {
   const pricing = new PricingService();
 

@@ -18,6 +18,8 @@ describe('extractCityFromAddress', () => {
   });
 
   it('strips German PLZ from the city candidate when country is spelled out', () => {
-    expect(extractCityFromAddress('Weg 2, 10115 Berlin, Germany')).toBe('Berlin');
+    expect(extractCityFromAddress('Weg 2, 10115 Berlin, Germany')).toBe(
+      'Berlin',
+    );
   });
 });

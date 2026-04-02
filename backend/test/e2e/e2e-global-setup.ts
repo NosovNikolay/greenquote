@@ -2,9 +2,6 @@ import { config } from 'dotenv';
 import { execSync } from 'node:child_process';
 import { resolve } from 'node:path';
 
-/**
- * Runs once before e2e workers. Ensures schema is applied (requires Postgres).
- */
 export default function globalSetup(): void {
   const root = resolve(__dirname, '../..');
   config({ path: resolve(root, '.env.local') });

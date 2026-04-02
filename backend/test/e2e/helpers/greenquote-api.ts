@@ -1,7 +1,6 @@
 import type { Server } from 'node:http';
 import request from 'supertest';
 
-/** API-facing types — no HTTP paths or status codes in test bodies. */
 export interface RegisterInput {
   fullName: string;
   email: string;
@@ -70,6 +69,21 @@ export interface QuoteSummary {
   city?: string;
 }
 
+export interface QuoteAmortizationSchedule {
+  termYears: number;
+  apr: number;
+  principalEur: number;
+  monthlyPayment: number;
+  rows: Array<{
+    month: number;
+    payment: number;
+    principal: number;
+    interest: number;
+    balanceRemaining: number;
+  }>;
+  totalInterestEur: number;
+}
+
 function toSession(body: {
   access_token: string;
   user: {
@@ -88,9 +102,6 @@ function toSession(body: {
   };
 }
 
-/**
- * Typed facade over the HTTP API. Transport (paths, verbs, headers) stays here.
- */
 export function createGreenquoteApi(server: Server) {
   const agent = request(server);
 
@@ -148,33 +159,19 @@ export function createGreenquoteApi(server: Server) {
       session: AuthSession,
       quoteId: string,
       termYears: 5 | 10 | 15,
-    ): Promise<{
-      termYears: number;
-      apr: number;
-      principalEur: number;
-      monthlyPayment: number;
-      rows: Array<{
-        month: number;
-        payment: number;
-        principal: number;
-        interest: number;
-        balanceRemaining: number;
-      }>;
-      totalInterestEur: number;
-    }> {
+    ): Promise<QuoteAmortizationSchedule> {
       const res = await agent
         .get(`/api/quotes/${quoteId}/amortization`)
         .query({ termYears })
         .set('Authorization', `Bearer ${session.accessToken}`)
         .expect(200);
-      return res.body;
+      return res.body as QuoteAmortizationSchedule;
     },
   };
 }
 
 export type GreenquoteApi = ReturnType<typeof createGreenquoteApi>;
 
-/** Error JSON from {@link GlobalExceptionFilter} */
 export interface ApiErrorBody {
   statusCode: number;
   code: string;
@@ -184,9 +181,6 @@ export interface ApiErrorBody {
   timestamp: string;
 }
 
-/**
- * Raw status + body for asserting validation and domain errors without embedding HTTP in specs.
- */
 export type ApiAttemptResult = { status: number; body: unknown };
 
 export function createGreenquoteApiWithAttempts(server: Server) {
@@ -218,7 +212,6 @@ export function createGreenquoteApiWithAttempts(server: Server) {
       return { status: res.status, body: res.body };
     },
 
-    /** Same as create quote but sends an arbitrary JSON body (e.g. extra properties). */
     async createQuoteRawAttempt(
       session: AuthSession,
       body: Record<string, unknown>,

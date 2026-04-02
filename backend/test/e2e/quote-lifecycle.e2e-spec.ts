@@ -1,3 +1,4 @@
+import { PRICE_PER_KW_EUR } from '@greenquote/constants';
 import type { INestApplication } from '@nestjs/common';
 import { createTestApp } from './helpers/create-test-app';
 import { createGreenquoteApi } from './helpers/greenquote-api';
@@ -42,7 +43,10 @@ describe('Quote lifecycle (e2e)', () => {
     });
 
     expect(created.id).toEqual(expect.any(String));
-    expect(created.derived.systemPriceEur).toBeCloseTo(5.4 * 1200, 2);
+    expect(created.derived.systemPriceEur).toBeCloseTo(
+      5.4 * PRICE_PER_KW_EUR,
+      2,
+    );
     expect(created.inputs.monthlyConsumptionKwh).toBe(450);
 
     const list = await api.listMyQuotes(loggedIn);

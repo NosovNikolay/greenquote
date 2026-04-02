@@ -2,7 +2,6 @@ import { config } from 'dotenv';
 import { defineConfig } from 'drizzle-kit';
 import { resolve } from 'node:path';
 
-// Load env the same way as Nest (`ConfigModule` reads `.env.local` then `.env`).
 config({ path: resolve(process.cwd(), '.env.local'), quiet: true });
 config({ path: resolve(process.cwd(), '.env'), quiet: true });
 

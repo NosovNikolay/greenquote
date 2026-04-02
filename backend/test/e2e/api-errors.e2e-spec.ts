@@ -1,3 +1,4 @@
+import { PRICE_PER_KW_EUR } from '@greenquote/constants';
 import type { INestApplication } from '@nestjs/common';
 import { ErrorCode } from '../../src/common/exceptions/error-codes';
 import { createTestApp } from './helpers/create-test-app';
@@ -176,7 +177,7 @@ describe('API validation and errors (e2e)', () => {
       email,
       monthlyConsumptionKwh: 100,
       systemSizeKw: 5,
-      downPayment: 5 * 1200,
+      downPayment: 5 * PRICE_PER_KW_EUR,
     });
     expect(status).toBe(400);
     const e = err(body);
