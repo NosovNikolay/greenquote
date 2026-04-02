@@ -1,7 +1,7 @@
 import { PRICE_PER_KW_EUR } from '@greenquote/constants';
 import type { INestApplication } from '@nestjs/common';
 import { ErrorCode } from '../../src/common/exceptions/error-codes';
-import { createTestApp } from './helpers/create-test-app';
+import { createTestApp, getTestHttpServer } from './helpers/create-test-app';
 import {
   createGreenquoteApiWithAttempts,
   type ApiErrorBody,
@@ -51,7 +51,7 @@ describe('API validation and errors (e2e)', () => {
   });
 
   it('rejects register with short password (validation)', async () => {
-    const api = createGreenquoteApiWithAttempts(app.getHttpServer());
+    const api = createGreenquoteApiWithAttempts(getTestHttpServer(app));
     const { status, body } = await api.registerAttempt({
       fullName: 'A',
       email: `short-pw-${Date.now()}@e2e-test.local`,
@@ -62,7 +62,7 @@ describe('API validation and errors (e2e)', () => {
   });
 
   it('rejects register with invalid email (validation)', async () => {
-    const api = createGreenquoteApiWithAttempts(app.getHttpServer());
+    const api = createGreenquoteApiWithAttempts(getTestHttpServer(app));
     const { status, body } = await api.registerAttempt({
       fullName: 'Valid Name',
       email: 'not-an-email',
@@ -73,7 +73,7 @@ describe('API validation and errors (e2e)', () => {
   });
 
   it('rejects duplicate email (conflict)', async () => {
-    const api = createGreenquoteApiWithAttempts(app.getHttpServer());
+    const api = createGreenquoteApiWithAttempts(getTestHttpServer(app));
     const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const email = `dup-${suffix}@e2e-test.local`;
     const password = 'long-secure-password';
@@ -94,7 +94,7 @@ describe('API validation and errors (e2e)', () => {
   });
 
   it('rejects login with wrong password (unauthorized)', async () => {
-    const api = createGreenquoteApiWithAttempts(app.getHttpServer());
+    const api = createGreenquoteApiWithAttempts(getTestHttpServer(app));
     const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const email = `login-wrong-${suffix}@e2e-test.local`;
     await api.registerAttempt({
@@ -112,7 +112,7 @@ describe('API validation and errors (e2e)', () => {
   });
 
   it('rejects quote routes without bearer token (unauthorized)', async () => {
-    const api = createGreenquoteApiWithAttempts(app.getHttpServer());
+    const api = createGreenquoteApiWithAttempts(getTestHttpServer(app));
     const list = await api.listMyQuotesAttempt(null);
     expect(list.status).toBe(401);
     expect(err(list.body).code).toBe(ErrorCode.UNAUTHORIZED);
@@ -128,7 +128,7 @@ describe('API validation and errors (e2e)', () => {
   });
 
   it('rejects create quote with invalid body (validation)', async () => {
-    const api = createGreenquoteApiWithAttempts(app.getHttpServer());
+    const api = createGreenquoteApiWithAttempts(getTestHttpServer(app));
     const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const email = `quote-val-${suffix}@e2e-test.local`;
     const reg = await api.registerAttempt({
@@ -161,7 +161,7 @@ describe('API validation and errors (e2e)', () => {
   });
 
   it('rejects create quote when down payment is not less than system price (bad request)', async () => {
-    const api = createGreenquoteApiWithAttempts(app.getHttpServer());
+    const api = createGreenquoteApiWithAttempts(getTestHttpServer(app));
     const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const email = `quote-bad-${suffix}@e2e-test.local`;
     const reg = await api.registerAttempt({
@@ -186,7 +186,7 @@ describe('API validation and errors (e2e)', () => {
   });
 
   it('rejects unknown quote id (not found)', async () => {
-    const api = createGreenquoteApiWithAttempts(app.getHttpServer());
+    const api = createGreenquoteApiWithAttempts(getTestHttpServer(app));
     const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const email = `quote-nf-${suffix}@e2e-test.local`;
     const reg = await api.registerAttempt({
@@ -206,7 +206,7 @@ describe('API validation and errors (e2e)', () => {
   });
 
   it('rejects non-UUID quote id (validation)', async () => {
-    const api = createGreenquoteApiWithAttempts(app.getHttpServer());
+    const api = createGreenquoteApiWithAttempts(getTestHttpServer(app));
     const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const email = `quote-uuid-${suffix}@e2e-test.local`;
     const reg = await api.registerAttempt({
@@ -223,7 +223,7 @@ describe('API validation and errors (e2e)', () => {
   });
 
   it('rejects extra properties on create quote (validation)', async () => {
-    const api = createGreenquoteApiWithAttempts(app.getHttpServer());
+    const api = createGreenquoteApiWithAttempts(getTestHttpServer(app));
     const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const email = `quote-extra-${suffix}@e2e-test.local`;
     const reg = await api.registerAttempt({

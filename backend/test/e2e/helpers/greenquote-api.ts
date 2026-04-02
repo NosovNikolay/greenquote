@@ -84,7 +84,7 @@ export interface QuoteAmortizationSchedule {
   totalInterestEur: number;
 }
 
-function toSession(body: {
+export type AuthTokenResponseBody = {
   access_token: string;
   user: {
     id: string;
@@ -92,7 +92,9 @@ function toSession(body: {
     fullName: string;
     role: string;
   };
-}): AuthSession {
+};
+
+function toSession(body: AuthTokenResponseBody): AuthSession {
   return {
     accessToken: body.access_token,
     userId: body.user.id,
@@ -115,12 +117,12 @@ export function createGreenquoteApi(server: Server) {
         .post('/api/auth/register')
         .send(input)
         .expect(201);
-      return toSession(res.body);
+      return toSession(res.body as AuthTokenResponseBody);
     },
 
     async login(input: LoginInput): Promise<AuthSession> {
       const res = await agent.post('/api/auth/login').send(input).expect(201);
-      return toSession(res.body);
+      return toSession(res.body as AuthTokenResponseBody);
     },
 
     async createQuote(

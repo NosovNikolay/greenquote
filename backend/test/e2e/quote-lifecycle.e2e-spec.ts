@@ -1,6 +1,6 @@
 import { PRICE_PER_KW_EUR } from '@greenquote/constants';
 import type { INestApplication } from '@nestjs/common';
-import { createTestApp } from './helpers/create-test-app';
+import { createTestApp, getTestHttpServer } from './helpers/create-test-app';
 import { createGreenquoteApi } from './helpers/greenquote-api';
 
 describe('Quote lifecycle (e2e)', () => {
@@ -15,7 +15,7 @@ describe('Quote lifecycle (e2e)', () => {
   });
 
   it('register → login → create quote → list quotes → quote details', async () => {
-    const api = createGreenquoteApi(app.getHttpServer());
+    const api = createGreenquoteApi(getTestHttpServer(app));
     const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
     const email = `lifecycle-${suffix}@e2e-test.local`;
     const password = 'long-secure-password';
