@@ -22,7 +22,8 @@ export function buildAmortizationSchedule(input: {
   termYears: number;
   monthlyPaymentEur: number;
 }): AmortizationRow[] {
-  const { principalEur, annualAprPercent, termYears, monthlyPaymentEur } = input;
+  const { principalEur, annualAprPercent, termYears, monthlyPaymentEur } =
+    input;
   if (principalEur <= 0 || termYears <= 0) {
     return [];
   }

@@ -1,5 +1,6 @@
-/** Must match `PRICE_PER_KW_EUR` in `backend/src/modules/quotes/quotes.service.ts`. */
-export const PRICE_PER_KW_EUR = 1200;
+import { PRICE_PER_KW_EUR } from "@greenquote/constants";
+
+export { PRICE_PER_KW_EUR };
 
 export function estimatedSystemPriceEur(systemSizeKw: number): number {
   return systemSizeKw * PRICE_PER_KW_EUR;

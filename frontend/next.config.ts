@@ -7,7 +7,7 @@ if (!process.env.API_URL?.trim()) {
 }
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@greenquote/sdk"],
+  transpilePackages: ["@greenquote/constants", "@greenquote/sdk"],
 };
 
 export default nextConfig;
