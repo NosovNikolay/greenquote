@@ -121,8 +121,6 @@ Starts:
 pnpm run dev:web
 ```
 
-**Before you submit:** use the pre-submission checklist and testing plan in [`docs/SUBMISSION_CHECKLIST.md`](docs/SUBMISSION_CHECKLIST.md).
-
 ## Useful scripts (root `package.json`)
 
 | Script | Purpose |
@@ -135,36 +133,64 @@ pnpm run dev:web
 
 Backend-specific scripts (`cd backend`): `pnpm run db:up`, `pnpm run db:migrate`, `pnpm run db:seed`, `pnpm test`, `pnpm run test:e2e`.
 
+## Tests
+
+Automated tests live under **`backend/test/`** (Jest). The **frontend** has no automated test suite in this repo yet.
+
+### Unit tests (`pnpm test` from `backend/`)
+
+| Area | File | What is covered |
+|------|------|-----------------|
+| **Pricing** | `unit/modules/quotes/pricing.service.spec.ts` | System price (€/kW), principal after down payment, rounding; **risk bands A / B / C** boundary rules; **APR** per band; **5 / 10 / 15 year** offers with shared principal; **monthly payment** amortization (including 0% APR edge case). |
+| **Quotes service** | `unit/modules/quotes/quotes.service.spec.ts` | **Create** rejects down payment ≥ system price; **findOne** owner vs non-owner vs **admin**; contact snapshot vs profile; **not found**; **listMine** summary amounts; **getAmortizationSchedule** valid/invalid term, owner vs forbidden. |
+| **Quote JSON storage** | `unit/common/types/quote-result-storage.spec.ts` | Serialize / deserialize **EUR ↔ integer cents**; optional address; round-trip invariants. |
+| **Money helpers** | `unit/common/utils/money.spec.ts` | `eurToCents` / `centsToEur` rounding, float safety, round-trips. |
+| **Amortization** | `unit/common/utils/amortization.spec.ts` | Schedule sums to principal, balance ends at zero; empty edge cases; 0% APR. |
+| **Address** | `unit/common/utils/address.spec.ts` | **extractCityFromAddress** — trailing country codes / country names, PLZ stripping. |
+
+### API e2e tests (`pnpm run test:e2e` from `backend/`)
+
+Requires **Postgres** (e.g. `pnpm run db:up` + migrate; or run after **`pnpm run setup`** from the repo root). The app is booted in-process with **`supertest`** against a real database.
+
+| File | What is covered |
+|------|-----------------|
+| `e2e/app.e2e-spec.ts` | **`GET /api/health`** returns `{ status: 'ok' }`. |
+| `e2e/quote-lifecycle.e2e-spec.ts` | **Happy path:** register → login → **create quote** → **list quotes** → **get quote by id** → **amortization** for a term. |
+| `e2e/api-errors.e2e-spec.ts` | **Auth / validation / domain errors:** short password, bad email, **duplicate email (409)**, wrong password **(401)**, missing **Bearer** on quotes **(401)**, invalid create-quote body, down payment vs system price **(400)**, unknown quote **(404)**, invalid UUID **(400)**, **forbidNonWhitelisted** extra JSON fields **(400)**. |
+
+Global HTTP errors are shaped by **`GlobalExceptionFilter`** (included in the e2e test app).
+
 ## Production readiness
 
 The app is suitable for local development and demos. To run it **in production**, plan for at least the following.
 
 ### Packaging & dependencies
 
-- **Published packages:** Today **`@greenquote/constants`** and **`@greenquote/sdk`** are consumed via **`workspace:*`** and built with the repo (`pnpm run build:all`). For production you would typically **publish semver’d packages** to a registry (npm org or private registry) and depend on versions instead of building workspace packages inside every deploy—clearer supply chain and faster CI when only app code changes.
+- **Published packages:** Today **`@greenquote/constants`** and **`@greenquote/sdk`** are consumed via **`workspace:*`** and built with the repo (`pnpm run build:all`). For production **publish semver’d packages** to a registry (npm org or private registry) and depend on versions instead of building workspace packages inside every deploy. Clearer supply chain and faster CI when only app code changes.
 
 ### Containers & runtime
 
-- **Docker for services:** Ship **production Dockerfiles** (multi-stage, non-root user) for the **Nest API** and **Next.js** app, plus **compose/Kubernetes manifests** or your cloud’s equivalent. The repo today only uses Docker for **local Postgres**; production should target **managed PostgreSQL** and wire health checks to **`/api/health`**.
+- **Docker for services:** Ship **production Dockerfiles** for the **Nest API** and **Next.js** app, plus **compose/Kubernetes manifests** or equialent. The repo today only uses Docker for **local Postgres**; production should target **managed PostgreSQL** and wire health checks to **`/api/health`**.
 
 ### Data & search
 
-- **Admin quote search:** The admin list uses **`ILIKE`** on name/email. For production scale and relevance, replace this with **PostgreSQL full-text search** (`tsvector` columns, GIN indexes, `websearch_to_tsquery` or similar) or a dedicated search index/service.
+- **Admin quote search:** The admin list uses **`ILIKE`** on name/email. For production scale and relevance, this should be replaced this with **PostgreSQL full-text search** or a dedicated search index/service.
 
 ### Security & auth
 
-- **JWT lifecycle:** Current access tokens are long-lived by configuration. Production should add **refresh tokens**, **rotation**, and a **revocation** story (server-side blocklist/session store or short-lived access + opaque refresh), and align **Auth.js** session policy with the API.
+- **JWT lifecycle:** Current access tokens are long-lived by configuration. Production should add **refresh tokens**, **rotation**, and a **revocation** story.
 
 ### CI/CD
 
-- **Pipeline:** Add a **CI/CD pipeline** (e.g. **GitHub Actions**): install with **`pnpm install --frozen-lockfile`**, **lint**, **unit tests**, **`build:all`**, **API e2e** with a **Postgres service container**, then deploy to staging/production. Gate merges on required checks; store test artifacts as needed.
+- **Pipeline:** For prodcution build a **CI/CD pipeline** should be added (e.g. **GitHub Actions**): **install**, **lint**, **unit tests**, **`build:all`**, **API e2e** with a **Postgres service container**, then deploy to staging/production.
 
 ### Operations & quality (recommended)
 
-- **Secrets:** Load from a **secret manager** in the cloud; avoid baking secrets into images; rotate credentials.
+- **Secrets:** Load from a **secret manager** in the cloud;
 - **API edge:** **Rate limiting**, strict **CORS** for known web origins, request size limits.
-- **Database:** Automated **backups**, migration rollback strategy, **connection pooling** (pooler or managed offering).
+- **Database:** Automated **backups**, migration rollback strategy, **connection pooling**.
+- **Data isolation** for multi-tenant system: RLS (row level sequrity by postgres) or equialent functionality to prevent any access of the data by non
 - **Observability:** **Metrics** and **tracing** (e.g. OpenTelemetry) with **alerting** on errors and latency; correlate request IDs across Next route handlers and Nest (Pino logs are a start).
-- **Testing:** **Playwright** (or similar) for critical UI flows in CI; **dependency scanning** (Dependabot/Snyk); optional **load testing** on quote creation.
+- **Testing:** **Playwright** (or similar) for critical UI flows in CI;
 
 **Local defaults:** web [http://localhost:3000](http://localhost:3000), API [http://localhost:3001](http://localhost:3001) — see [Quick start](#quick-start).
