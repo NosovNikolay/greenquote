@@ -2,7 +2,7 @@ import { extractCityFromAddress } from '../../../../src/common/utils/address';
 
 describe('extractCityFromAddress', () => {
   it('uses the segment before a trailing ISO country code (DE)', () => {
-    expect(extractCityFromAddress('5 Demo Str., Berlin, DE')).toBe('Berlin');
+    expect(extractCityFromAddress('5 Ackerstr., Berlin, DE')).toBe('Berlin');
   });
 
   it('uses the segment before a trailing ISO country code (lowercase)', () => {

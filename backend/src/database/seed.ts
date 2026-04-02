@@ -42,7 +42,7 @@ async function seedDemoQuotesForDefaultUser(
       monthlyConsumptionKwh,
       systemSizeKw,
       downPaymentEur,
-      installationAddress: `${i + 1} Demo Str., Berlin, DE`,
+      installationAddress: `${i + 1} Ackerstr., Berlin, DE`,
     });
     const stored = serializeQuoteResultPayload({
       ...payload,
