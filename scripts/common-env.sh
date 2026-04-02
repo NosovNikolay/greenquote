@@ -6,7 +6,9 @@ GREENQUOTE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export GREENQUOTE_ROOT
 
 export AUTH_SECRET="${AUTH_SECRET:-dev-local-secret-change-in-production-min-32-chars}"
-export AUTH_URL="${AUTH_URL:-http://localhost:3000}"
+# Next.js listens on WEB_PORT (see dev / prod scripts). Default AUTH_URL matches that origin for Auth.js.
+export WEB_PORT="${WEB_PORT:-3000}"
+export AUTH_URL="${AUTH_URL:-http://localhost:${WEB_PORT}}"
 export API_URL="${API_URL:-http://localhost:3001/api}"
 export JWT_SECRET="${JWT_SECRET:-dev-jwt-secret-min-32-chars-long!!}"
 export DATABASE_URL="${DATABASE_URL:-postgresql://greenquote:greenquote@127.0.0.1:5433/greenquote}"
