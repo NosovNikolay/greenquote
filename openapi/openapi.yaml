@@ -64,18 +64,33 @@ paths:
     get:
       operationId: listMyQuotes
       tags: [quotes]
-      summary: List quotes for the authenticated user
+      summary: List quotes for the authenticated user (paginated)
       security:
         - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 30
+            default: 30
+          description: Page size (max 30)
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/QuoteSummary"
+                $ref: "#/components/schemas/MyQuotesList"
     post:
       operationId: createQuote
       tags: [quotes]
@@ -118,11 +133,46 @@ paths:
               schema:
                 $ref: "#/components/schemas/QuoteDetail"
 
+  /quotes/{id}/amortization:
+    get:
+      operationId: getQuoteAmortization
+      tags: [quotes]
+      summary: Amortization schedule for one installment term (owner or admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: termYears
+          in: query
+          required: true
+          description: Installment term in years (must match a stored offer)
+          schema:
+            type: integer
+            enum: [5, 10, 15]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteAmortizationResponse"
+        "400":
+          description: Invalid term or no offer for this term
+        "403":
+          description: Forbidden
+        "404":
+          description: Quote not found
+
   /admin/quotes:
     get:
       operationId: listAllQuotesAdmin
       tags: [admin]
-      summary: List all quotes (admin only)
+      summary: List quotes (admin only), paginated
       security:
         - bearerAuth: []
       parameters:
@@ -132,15 +182,29 @@ paths:
           schema:
             type: string
           description: Filter by user email or name (substring)
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 30
+            default: 30
+          description: Page size (max 30)
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/AdminQuoteRow"
+                $ref: "#/components/schemas/AdminQuotesList"
 
 components:
   securitySchemes:
@@ -204,20 +268,76 @@ components:
     CreateQuoteRequest:
       type: object
       required:
+        - fullName
+        - email
         - monthlyConsumptionKwh
         - systemSizeKw
         - downPayment
       properties:
+        fullName:
+          type: string
+          minLength: 2
+          maxLength: 255
+        email:
+          type: string
+          format: email
         monthlyConsumptionKwh:
           type: number
         systemSizeKw:
           type: number
         downPayment:
           type: number
-          description: USD
+          description: EUR
         installationAddress:
           type: string
           maxLength: 500
+
+    AmortizationRow:
+      type: object
+      required:
+        - month
+        - payment
+        - principal
+        - interest
+        - balanceRemaining
+      properties:
+        month:
+          type: integer
+          minimum: 1
+        payment:
+          type: number
+        principal:
+          type: number
+        interest:
+          type: number
+        balanceRemaining:
+          type: number
+
+    QuoteAmortizationResponse:
+      type: object
+      required:
+        - termYears
+        - apr
+        - principalEur
+        - monthlyPayment
+        - rows
+        - totalInterestEur
+      properties:
+        termYears:
+          type: integer
+          enum: [5, 10, 15]
+        apr:
+          type: number
+        principalEur:
+          type: number
+        monthlyPayment:
+          type: number
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/AmortizationRow"
+        totalInterestEur:
+          type: number
 
     QuoteOffer:
       type: object
@@ -241,13 +361,19 @@ components:
       required:
         - monthlyConsumptionKwh
         - systemSizeKw
-        - downPaymentUsd
+        - downPaymentEur
       properties:
+        fullName:
+          type: string
+          description: Snapshot from the quote form at creation time
+        email:
+          type: string
+          description: Snapshot email at creation time
         monthlyConsumptionKwh:
           type: number
         systemSizeKw:
           type: number
-        downPaymentUsd:
+        downPaymentEur:
           type: number
         installationAddress:
           type: string
@@ -256,17 +382,17 @@ components:
       type: object
       required:
         - currency
-        - systemPriceUsd
-        - principalUsd
+        - systemPriceEur
+        - principalEur
         - riskBand
         - aprPercent
       properties:
         currency:
           type: string
-          enum: [USD]
-        systemPriceUsd:
+          enum: [EUR]
+        systemPriceEur:
           type: number
-        principalUsd:
+        principalEur:
           type: number
         riskBand:
           type: string
@@ -350,3 +476,41 @@ components:
               type: string
             userName:
               type: string
+
+    MyQuotesList:
+      type: object
+      required: [items, total, page, limit]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuoteSummary"
+        total:
+          type: integer
+          minimum: 0
+        page:
+          type: integer
+          minimum: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 30
+
+    AdminQuotesList:
+      type: object
+      required: [items, total, page, limit]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminQuoteRow"
+        total:
+          type: integer
+          minimum: 0
+        page:
+          type: integer
+          minimum: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 30
