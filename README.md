@@ -14,7 +14,7 @@ A **solar panel quote and financing calculator** monorepo: users submit installa
 
 ## Architecture
 
-The app is a **classic SPA-style split**: a **Next.js** UI talks to a **NestJS** JSON API over HTTP. The **`openapi/openapi.yaml`** spec is the contract; **`@greenquote/sdk`** is generated from it so the frontend gets typed requests. **`@greenquote/constants`** keeps pricing numbers aligned between API and UI.
+The app is a **SPA-style split**: a **Next.js** UI talks to a **NestJS** JSON API over HTTP. The **`openapi/openapi.yaml`** spec is the contract; **`@greenquote/sdk`** is generated from it so the frontend gets typed requests. **`@greenquote/constants`** keeps pricing numbers aligned between API and UI.
 
 **Auth:** The browser signs in through Auth.js; credentials are forwarded to **`POST /api/auth/login`**, and Nest returns a **JWT** signed with the backend’s secret. Auth.js stores that token inside its **session** (signed with **`AUTH_SECRET`** on the Next side only). Server-side routes and actions read the session, attach **`Authorization: Bearer`**, and call the API; Nest validates JWTs with **`JWT_SECRET`** and never sees the Auth.js cookie.
 
