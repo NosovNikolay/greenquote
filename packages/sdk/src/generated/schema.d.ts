@@ -62,7 +62,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List quotes for the authenticated user */
+        /** List quotes for the authenticated user (paginated) */
         get: operations["listMyQuotes"];
         put?: never;
         /** Create a pre-qualification quote */
@@ -90,6 +90,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/quotes/{id}/amortization": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Amortization schedule for one installment term (owner or admin) */
+        get: operations["getQuoteAmortization"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/quotes": {
         parameters: {
             query?: never;
@@ -97,7 +114,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List all quotes (admin only) */
+        /** List quotes (admin only), paginated */
         get: operations["listAllQuotesAdmin"];
         put?: never;
         post?: never;
@@ -137,11 +154,30 @@ export interface components {
             };
         };
         CreateQuoteRequest: {
+            fullName: string;
+            /** Format: email */
+            email: string;
             monthlyConsumptionKwh: number;
             systemSizeKw: number;
-            /** @description USD */
+            /** @description EUR */
             downPayment: number;
             installationAddress?: string;
+        };
+        AmortizationRow: {
+            month: number;
+            payment: number;
+            principal: number;
+            interest: number;
+            balanceRemaining: number;
+        };
+        QuoteAmortizationResponse: {
+            /** @enum {integer} */
+            termYears: 5 | 10 | 15;
+            apr: number;
+            principalEur: number;
+            monthlyPayment: number;
+            rows: components["schemas"]["AmortizationRow"][];
+            totalInterestEur: number;
         };
         QuoteOffer: {
             termYears: number;
@@ -150,16 +186,20 @@ export interface components {
             monthlyPayment: number;
         };
         QuoteInputs: {
+            /** @description Snapshot from the quote form at creation time */
+            fullName?: string;
+            /** @description Snapshot email at creation time */
+            email?: string;
             monthlyConsumptionKwh: number;
             systemSizeKw: number;
-            downPaymentUsd: number;
+            downPaymentEur: number;
             installationAddress?: string;
         };
         QuoteDerived: {
             /** @enum {string} */
-            currency: "USD";
-            systemPriceUsd: number;
-            principalUsd: number;
+            currency: "EUR";
+            systemPriceEur: number;
+            principalEur: number;
             /** @enum {string} */
             riskBand: "A" | "B" | "C";
             aprPercent: number;
@@ -196,6 +236,18 @@ export interface components {
         AdminQuoteRow: components["schemas"]["QuoteSummary"] & {
             userEmail: string;
             userName: string;
+        };
+        MyQuotesList: {
+            items: components["schemas"]["QuoteSummary"][];
+            total: number;
+            page: number;
+            limit: number;
+        };
+        AdminQuotesList: {
+            items: components["schemas"]["AdminQuoteRow"][];
+            total: number;
+            page: number;
+            limit: number;
         };
     };
     responses: never;
@@ -276,7 +328,11 @@ export interface operations {
     };
     listMyQuotes: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                /** @description Page size (max 30) */
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -289,7 +345,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["QuoteSummary"][];
+                    "application/json": components["schemas"]["MyQuotesList"];
                 };
             };
         };
@@ -340,11 +396,60 @@ export interface operations {
             };
         };
     };
+    getQuoteAmortization: {
+        parameters: {
+            query: {
+                /** @description Installment term in years (must match a stored offer) */
+                termYears: 5 | 10 | 15;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuoteAmortizationResponse"];
+                };
+            };
+            /** @description Invalid term or no offer for this term */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Quote not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     listAllQuotesAdmin: {
         parameters: {
             query?: {
                 /** @description Filter by user email or name (substring) */
                 q?: string;
+                page?: number;
+                /** @description Page size (max 30) */
+                limit?: number;
             };
             header?: never;
             path?: never;
@@ -358,7 +463,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AdminQuoteRow"][];
+                    "application/json": components["schemas"]["AdminQuotesList"];
                 };
             };
         };

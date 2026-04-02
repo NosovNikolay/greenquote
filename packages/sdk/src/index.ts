@@ -5,9 +5,6 @@ export type { components, paths } from "./generated/schema.js";
 
 export type GreenquoteClient = ReturnType<typeof createGreenquoteClient>;
 
-/**
- * Typed fetch client for the Greenquote API (`baseUrl` should include `/api`, e.g. `http://localhost:3001/api`).
- */
 export function createGreenquoteClient(options: {
   baseUrl: string;
   getAccessToken?: () => string | undefined | Promise<string | undefined>;
