@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Dev: Postgres up (no migrate/seed), then API + Next with watch. Use after `pnpm reset` when DB is already migrated.
+# Dev: Postgres up (no migrate/seed), then API + Next with watch. Use after `pnpm run setup` when DB is already migrated.
 set -euo pipefail
 source "$(cd "$(dirname "$0")" && pwd)/common-env.sh"
 cd "$GREENQUOTE_ROOT"

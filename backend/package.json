@@ -24,6 +24,7 @@
     "db:down": "docker compose -f docker-compose.yml down",
     "db:generate": "drizzle-kit generate --config drizzle.config.ts",
     "db:migrate": "drizzle-kit migrate --config drizzle.config.ts",
+    "predb:seed": "pnpm --dir .. run build:constants",
     "db:seed": "tsx src/database/seed.ts",
     "db:studio": "drizzle-kit studio --config drizzle.config.ts"
   },

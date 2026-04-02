@@ -4,6 +4,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
+echo "Building @greenquote/constants (required before db:seed imports it)…"
+pnpm run build:constants
+
 echo "Running migrations and seed…"
 (
   cd "$ROOT/backend"

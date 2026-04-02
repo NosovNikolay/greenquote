@@ -72,24 +72,25 @@ cp frontend/.env.example frontend/.env.local
 # Generate AUTH_SECRET: openssl rand -base64 32
 ```
 
-Set `API_URL` to `http://localhost:3001/api` when using the local Nest API. Without `API_URL`, `pnpm run reset` will fail when building the frontend.
+Set `API_URL` to `http://localhost:3001/api` when using the local Nest API. Without `API_URL`, `pnpm run setup` will fail when building the frontend.
 
-### 3. Full reset (database + SDK + builds)
+### 3. Local setup (Postgres, migrate, seed, builds)
 
 From the **repository root**, run:
 
 ```bash
-pnpm run reset
+pnpm run setup
 ```
 
 This script:
 
 - Starts Postgres (`docker compose` in `backend/`)
-- Runs Drizzle migrations and seeds the database
+- Builds `@greenquote/constants` (the seed script imports it; required on a fresh clone before `dist/` exists)
+- Runs Drizzle migrations and the seed script (seed is additive / idempotent where noted—it does **not** truncate or drop the database)
 - Regenerates and builds `@greenquote/sdk`
 - Builds backend and frontend (compile check)
 
-Use this after cloning or when you need a clean DB and fresh artifacts.
+Use this after cloning or when you need migrations, seed data, and fresh workspace builds. To fully discard local Postgres data, stop the container and remove its Docker volume, then run setup again.
 
 ### 4. Production-style local stack (full setup + prod servers)
 
@@ -112,7 +113,7 @@ Starts:
 - **API** on [http://localhost:3001](http://localhost:3001) (Nest watch; health check at `/health`)
 - **Next.js** on [http://localhost:3000](http://localhost:3000) by default (set **`WEB_PORT`** to use another port)
 
-`pnpm run dev` does **not** migrate or seed; use `pnpm run reset` first (or when the schema/data is out of date).
+`pnpm run dev` does **not** migrate or seed; run `pnpm run setup` first after clone (or when the schema or seed data is out of date).
 
 **Frontend only** (API already running elsewhere):
 
@@ -128,7 +129,7 @@ pnpm run dev:web
 |--------|---------|
 | `pnpm run dev` | Postgres up + Nest `start:dev` + Next `dev` |
 | `pnpm run prod` | Postgres up → migrate → seed → `build:all` → Nest + Next in **production** mode |
-| `pnpm run reset` | Migrate, seed, generate SDK, build all packages |
+| `pnpm run setup` | Postgres up, migrate, seed, generate SDK, build all packages |
 | `pnpm run generate:sdk` | Regenerate SDK types from `openapi/openapi.yaml` |
 | `pnpm run build:all` | Build constants + SDK generate + build SDK + build backend + build frontend |
 
