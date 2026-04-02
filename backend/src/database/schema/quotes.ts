@@ -16,7 +16,6 @@ export const quotes = pgTable('quotes', {
     .references(() => users.id, { onDelete: 'cascade' }),
   monthlyConsumptionKwh: integer('monthly_consumption_kwh').notNull(),
   systemSizeKw: doublePrecision('system_size_kw').notNull(),
-  /** Same value as `result.inputs.downPaymentEurCents` (integer EUR cents). */
   downPaymentEurCents: integer('down_payment_eur_cents').notNull(),
   result: jsonb('result').$type<QuoteResultStored>().notNull(),
   createdAt: timestamp('created_at', { withTimezone: true })

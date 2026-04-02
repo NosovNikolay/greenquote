@@ -1,10 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 import { ErrorCode } from './error-codes';
 
-/**
- * Application-level error for the domain / service layer.
- * Mapped to HTTP by {@link GlobalExceptionFilter}.
- */
 export class AppException extends Error {
   constructor(
     public readonly code: ErrorCode,
@@ -62,7 +58,6 @@ export class AppException extends Error {
     );
   }
 
-  /** Infrastructure / persistence failures (e.g. DB unreachable). */
   static internal(
     message: string,
     details?: unknown,

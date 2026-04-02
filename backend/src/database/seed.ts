@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { PRICE_PER_KW_EUR } from '@greenquote/constants';
 import * as bcrypt from 'bcrypt';
 import { eq, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
@@ -34,7 +35,7 @@ async function seedDemoQuotesForDefaultUser(
     const systemSizeKw = 4 + (i % 12) * 0.5;
     const monthlyConsumptionKwh = 280 + (i % 15) * 25;
     const rawDown = 500 + i * 40;
-    const systemPriceEur = systemSizeKw * 1200;
+    const systemPriceEur = systemSizeKw * PRICE_PER_KW_EUR;
     const downPaymentEur = Math.min(rawDown, Math.max(0, systemPriceEur - 200));
 
     const payload = pricing.buildQuoteResult({

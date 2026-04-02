@@ -79,7 +79,6 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       };
     }
 
-    /** FK violation: e.g. JWT user id no longer in DB after reset — avoid opaque 500. */
     const pgCode = this.findPostgresErrorCode(exception);
     if (pgCode === '23503') {
       return {
@@ -101,7 +100,6 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     };
   }
 
-  /** Walks Error.cause chain (Drizzle wraps node-postgres errors). */
   private findPostgresErrorCode(exception: unknown): string | undefined {
     const seen = new Set<unknown>();
     let current: unknown = exception;

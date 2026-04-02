@@ -1,3 +1,4 @@
+import { PRICE_PER_KW_EUR } from '@greenquote/constants';
 import { Injectable } from '@nestjs/common';
 import {
   deserializeQuoteResultStored,
@@ -16,8 +17,6 @@ import type { RequestUser } from '../auth/jwt.strategy';
 import { CreateQuoteDto } from './dto/create-quote.dto';
 import { PricingService } from './pricing.service';
 import { QuotesRepository } from './quotes.repository';
-
-const PRICE_PER_KW_EUR = 1200;
 
 export interface QuoteResponseDto {
   id: string;

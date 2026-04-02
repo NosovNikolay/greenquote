@@ -12,9 +12,7 @@ export interface QuoteResultPayload {
     monthlyConsumptionKwh: number;
     systemSizeKw: number;
     downPaymentEur: number;
-    /** Installation site (from pre-qualification form). */
     installationAddress?: string;
-    /** Snapshot from the quote request (may differ from the user profile later). */
     fullName?: string;
     email?: string;
   };

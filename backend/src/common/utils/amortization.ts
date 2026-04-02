@@ -1,9 +1,3 @@
-/**
- * Fixed-rate loan amortization (annuity method): each period allocates payment
- * to interest on the outstanding balance and the rest to principal.
- * Last payment adjusts so the balance reaches zero (handles rounded PMT).
- */
-
 export interface AmortizationRow {
   month: number;
   payment: number;

@@ -1,10 +1,6 @@
 import type { QuoteResultPayload, RiskBand } from './quote-result.types';
 import { centsToEur, eurToCents } from '../utils/money';
 
-/**
- * JSONB + `down_payment_eur_cents` column: all monetary amounts as integer cents.
- * API / domain use {@link QuoteResultPayload} (EUR decimals).
- */
 export interface QuoteOfferStored {
   termYears: number;
   apr: number;

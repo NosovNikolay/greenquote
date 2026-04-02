@@ -11,9 +11,6 @@ export class UsersRepository {
 
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
-  /**
-   * @returns the row, or `null` if no user exists with this email (not an error).
-   */
   async findByEmail(email: string): Promise<UserRow | null> {
     return this.runQuery('findByEmail', async () => {
       const rows = await this.db
@@ -25,9 +22,6 @@ export class UsersRepository {
     });
   }
 
-  /**
-   * @returns the row, or `null` if no user exists with this id (not an error).
-   */
   async findById(id: string): Promise<UserRow | null> {
     return this.runQuery('findById', async () => {
       const rows = await this.db
@@ -52,10 +46,6 @@ export class UsersRepository {
     });
   }
 
-  /**
-   * Runs a DB operation, logs failures, and maps low-level driver errors to {@link AppException}.
-   * Does not treat an empty result as failure — callers use `null` for “not found”.
-   */
   private async runQuery<T>(
     operation: string,
     fn: () => Promise<T>,

@@ -1,3 +1,4 @@
+import { PRICE_PER_KW_EUR } from '@greenquote/constants';
 import { Injectable } from '@nestjs/common';
 import type {
   QuoteOffer,
@@ -6,7 +7,6 @@ import type {
 } from '../../common/types/quote-result.types';
 
 const CURRENCY = 'EUR' as const;
-const PRICE_PER_KW_EUR = 1200;
 const TERM_YEARS = [5, 10, 15] as const;
 
 const APR_BY_BAND: Record<RiskBand, number> = {
@@ -15,9 +15,6 @@ const APR_BY_BAND: Record<RiskBand, number> = {
   C: 11.9,
 };
 
-/**
- * Pure pricing / amortization logic (domain layer).
- */
 @Injectable()
 export class PricingService {
   buildQuoteResult(input: {
@@ -76,9 +73,6 @@ export class PricingService {
     return 'C';
   }
 
-  /**
-   * Standard fixed-rate loan amortization: M = P * [r(1+r)^n] / [(1+r)^n - 1]
-   */
   monthlyPaymentEur(
     principal: number,
     annualAprPercent: number,

@@ -5,7 +5,6 @@ export const users = pgTable('users', {
   email: varchar('email', { length: 255 }).notNull().unique(),
   passwordHash: varchar('password_hash', { length: 255 }).notNull(),
   fullName: varchar('full_name', { length: 255 }).notNull(),
-  /** `user` | `admin` */
   role: varchar('role', { length: 32 }).notNull().default('user'),
   createdAt: timestamp('created_at', { withTimezone: true })
     .defaultNow()
