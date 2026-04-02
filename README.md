@@ -24,32 +24,32 @@ The app is a **SPA-style split**: a **Next.js** UI talks to a **NestJS** JSON AP
 
 ### Login
 
-![Login](frontend/static/login-page.png)
+![Login](frontend/public/login-page.png)
 
 ### Quote list
 
-![Quote list](frontend/static/quote-list.png)
+![Quote list](frontend/public/quote-list.png)
 
 ### Quote creation
 
-![Quote creation](frontend/static/quote-creation-flow.png)
+![Quote creation](frontend/public/quote-creation-flow.png)
 
 ### Quote details
 
-![Quote details](frontend/static/quote-details.png)
+![Quote details](frontend/public/quote-details.png)
 
 ### Quote summary doc
 
-![Quote summary PDF / document](frontend/static/quote-summary-doc.png)
+![Quote summary PDF / document](frontend/public/quote-summary-doc.png)
 
 ### Admin panel
 
-![Admin panel](frontend/static/admin-panel.png)
+![Admin panel](frontend/public/admin-panel.png)
 
 ## Prerequisites
 
-- **Node.js** 25+ (see package engines if pinned elsewhere)
-- **pnpm** 9+ (`corepack enable && corepack prepare pnpm@9.15.9 --activate` or install per [pnpm.io](https://pnpm.io/installation))
+- **Node.js** 25+
+- **pnpm** 9+ (`brew install pnpm` or install per [pnpm.io](https://pnpm.io/installation))
 - **Docker** (for PostgreSQL via `backend/docker-compose.yml`; host port **5433** → container 5432 to avoid clashing with a local Postgres on 5432)
 
 ## Quick start

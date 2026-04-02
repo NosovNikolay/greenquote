@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import loginHeroImage from "../../../static/header-solar-energy-photovoltaics-1150x650.webp";
+import loginHeroImage from "../../../public/header-solar-energy-photovoltaics-1150x650.webp";
 
 export const metadata: Metadata = {
   title: "Sign in | Greenquote",
