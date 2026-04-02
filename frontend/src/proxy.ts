@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 
-export default auth((req) => {
+export const proxy = auth((req) => {
   const { pathname } = req.nextUrl;
   const isLoggedIn = !!req.auth;
 
@@ -14,6 +14,7 @@ export default auth((req) => {
 
   const isProtected =
     pathname === "/" ||
+    pathname === "/new" ||
     pathname.startsWith("/quotes") ||
     pathname.startsWith("/admin");
 
@@ -24,7 +25,7 @@ export default auth((req) => {
   }
 
   if (pathname.startsWith("/admin") && req.auth?.user?.role !== "admin") {
-    return NextResponse.redirect(new URL("/", req.nextUrl));
+    return NextResponse.redirect(new URL("/quotes", req.nextUrl));
   }
 
   return NextResponse.next();
