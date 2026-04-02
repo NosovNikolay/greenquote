@@ -12,6 +12,34 @@ A **solar panel quote and financing calculator** monorepo: users submit installa
 | **`openapi/`** | OpenAPI spec shared by backend and SDK generation |
 | **`packages/constants/`** | Shared constants (e.g. pricing) used by API and UI |
 
+## UI screenshots
+
+Images are stored under [`frontend/static/`](frontend/static/).
+
+### Login
+
+![Login](frontend/static/login-page.png)
+
+### Quote list
+
+![Quote list](frontend/static/quote-list.png)
+
+### Quote creation
+
+![Quote creation](frontend/static/quote-creation-flow.png)
+
+### Quote details
+
+![Quote details](frontend/static/quote-details.png)
+
+### Quote summary doc
+
+![Quote summary PDF / document](frontend/static/quote-summary-doc.png)
+
+### Admin panel
+
+![Admin panel](frontend/static/admin-panel.png)
+
 ## Prerequisites
 
 - **Node.js** 20+ (see package engines if pinned elsewhere)
@@ -145,18 +173,5 @@ Data: **Cloud SQL for PostgreSQL** (private IP + connector from Cloud Run), secr
 
 ---
 
-## Evaluation (project requirements)
-
-| Criterion | Notes |
-|-----------|--------|
-| **1. Correctness** | Core flow: quote inputs → persisted quote + deterministic pricing/result payload; validation at DTO and API layers. Edge cases covered incrementally in tests. |
-| **2. Documentation** | This README describes setup, scripts, and intent; **prefer clear commits and OpenAPI** over long inline comments in application code. |
-| **3. Testing** | Mix of **unit** (services, utils, filters) and **API e2e** (lifecycle, errors); expand UI e2e if product scope grows. |
-| **4. Readability** | Nest modules by domain (`quotes`, auth), shared types for quote results, SDK for API shapes; avoid duplicating validation between client and server where Zod/DTOs align. |
-| **5. Application architecture** | Conventional **Nest** modular structure, **Next** app routes + route handlers proxying to API, **Drizzle** repositories; boundaries: UI ↔ SDK ↔ HTTP ↔ services ↔ DB. |
-
----
-
-## Live demo (optional)
-
-If a public deployment exists, link it here. Local development uses `http://localhost:3000` and `http://localhost:3001` as above.
+## Demo
+Local development uses `http://localhost:3000` and `http://localhost:3001` as above.
