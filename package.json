@@ -1,0 +1,26 @@
+{
+  "name": "greenquote",
+  "private": true,
+  "packageManager": "pnpm@9.15.9",
+  "pnpm": {
+    "strictPeerDependencies": false,
+    "autoInstallPeers": true
+  },
+  "scripts": {
+    "build:constants": "pnpm --filter @greenquote/constants build",
+    "generate:sdk": "pnpm --filter @greenquote/sdk generate",
+    "build:sdk": "pnpm --filter @greenquote/sdk build",
+    "build:backend": "pnpm --filter backend build",
+    "build:frontend": "pnpm --filter frontend build",
+    "build:all": "pnpm run build:constants && pnpm run generate:sdk && pnpm run build:sdk && pnpm run build:backend && pnpm run build:frontend",
+    "reset": "bash scripts/reset.sh",
+    "prod": "bash scripts/prod-stack.sh",
+    "dev": "bash scripts/dev-stack.sh",
+    "dev:web": "bash scripts/dev-web.sh",
+    "dev:all": "bash scripts/dev-stack.sh",
+    "lint": "pnpm --filter frontend lint && pnpm --filter backend lint"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
