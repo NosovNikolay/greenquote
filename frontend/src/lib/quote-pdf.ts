@@ -53,6 +53,15 @@ function addressLines(detail: QuoteDetail): string[] {
   return [detail.address];
 }
 
+function quotePdfFileName(detail: QuoteDetail): string {
+  const d = new Date(detail.createdAt);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const shortId = detail.id.replace(/-/g, "").slice(0, 8);
+  return `Greenquote-plan-${y}-${m}-${day}-${shortId}.pdf`;
+}
+
 export function downloadQuotePdf(detail: QuoteDetail) {
   const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
   const pageW = doc.internal.pageSize.getWidth();
@@ -230,5 +239,5 @@ export function downloadQuotePdf(detail: QuoteDetail) {
     y += 3.5;
   }
 
-  doc.save(`greenquote-quote-${detail.id}.pdf`);
+  doc.save(quotePdfFileName(detail));
 }
